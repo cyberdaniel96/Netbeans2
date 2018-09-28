@@ -163,21 +163,24 @@ public class MQTT {
     }
     
     public void AddPrivateMessage(String message) throws Exception{
-        String datas[] = c.convertToString(message);
+        String tempDatas[] = c.convertToString(message);//source
+        String datas[] = new String[9];//destination
+        System.arraycopy(tempDatas, 0, datas, 0, tempDatas.length);
         //String command = datas[0];
         //String reserve = datas[1];
         String senderClientId = datas[3];
         String receiverClientId = datas[2];
         
         PrivateChatDB db = new PrivateChatDB();
-        String messageID = db.getNewID();
+        datas[8] = db.getNewID();
         String content = datas[4];
         String sentTime = datas[5];
         String sender = datas[6];
         String receiver = datas[7];
         
         
-        Message msg = new PrivateChat(messageID, content, sentTime, sender, receiver);
+        
+        Message msg = new PrivateChat(datas[8] , content, sentTime, sender, receiver);
         if(db.CreateMessage((PrivateChat)msg)){
             datas[2] = senderClientId;
             datas[3] = receiverClientId;
