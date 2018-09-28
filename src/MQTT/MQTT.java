@@ -170,7 +170,9 @@ public class MQTT {
         //String reserve = datas[1];
         String senderClientId = datas[3];
         String receiverClientId = datas[2];
-        
+//        for(String temp: datas){
+//            System.out.println(temp);
+//        }
         PrivateChatDB db = new PrivateChatDB();
         datas[8] = db.getNewID();
         String content = datas[4];
@@ -180,17 +182,20 @@ public class MQTT {
         
         
         
+        
         Message msg = new PrivateChat(datas[8] , content, sentTime, sender, receiver);
         if(db.CreateMessage((PrivateChat)msg)){
             datas[2] = senderClientId;
             datas[3] = receiverClientId;
             String payload = c.convertToHex(datas);
             Publish(payload);
+            System.out.println("inserted");
         }else{
             datas[4] = "RECEIVE FROM SERVER:/nMessage Cannot Be Sent...";
             datas[7] = datas[6];
             String payload = c.convertToHex(new String[]{});
             Publish(payload);
+            System.out.println("invalid insert data");
         }
         
     }
@@ -487,7 +492,7 @@ public class MQTT {
                     + c.ToHex(l.getFacility()) + "/" + c.ToHex(l.getLodgingType()) + "/"
                     + c.ToHex(l.getDescription()) + "/" + c.ToHex(l.getExpireDate()) + "/" + c.ToHex(u.getName()) + "/"
                     + c.ToHex(u.getContactNo()) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(l.getLodgingId()) + "/"
-                    + c.ToHex(l.getImage());
+                    + c.ToHex(l.getImage()) + "/" + c.ToHex(l.getUserId());
             Publish(payload);
         } else {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("1");
