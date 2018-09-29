@@ -24,6 +24,9 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import org.eclipse.paho.client.mqttv3.*;
@@ -65,6 +68,7 @@ public class MQTT {
             @Override
             public void connectionLost(Throwable throwable) {
                 System.out.println("Connection Lost");
+                 
             }
 
             @Override
@@ -128,6 +132,8 @@ public class MQTT {
                         
                         if(command.equals("004833")){
                             AddPrivateMessage(mqttMessage.toString());
+                        }else if(command.equals("004835")){
+                            GetAllPrivateMessage(mqttMessage.toString());
                         }
                     } else {
                         System.out.println("Not belong to server");
@@ -166,40 +172,61 @@ public class MQTT {
         String tempDatas[] = c.convertToString(message);//source
         String datas[] = new String[9];//destination
         System.arraycopy(tempDatas, 0, datas, 0, tempDatas.length);
-        //String command = datas[0];
-        //String reserve = datas[1];
         String senderClientId = datas[3];
         String receiverClientId = datas[2];
-//        for(String temp: datas){
-//            System.out.println(temp);
-//        }
         PrivateChatDB db = new PrivateChatDB();
         datas[8] = db.getNewID();
         String content = datas[4];
         String sentTime = datas[5];
         String sender = datas[6];
         String receiver = datas[7];
-        
-        
-        
-        
+
         Message msg = new PrivateChat(datas[8] , content, sentTime, sender, receiver);
         if(db.CreateMessage((PrivateChat)msg)){
             datas[2] = senderClientId;
             datas[3] = receiverClientId;
             String payload = c.convertToHex(datas);
             Publish(payload);
-            System.out.println("inserted");
+          
         }else{
             datas[4] = "RECEIVE FROM SERVER:/nMessage Cannot Be Sent...";
             datas[7] = datas[6];
             String payload = c.convertToHex(new String[]{});
             Publish(payload);
-            System.out.println("invalid insert data");
+           
         }
         
     }
 
+    public  void GetAllPrivateMessage(String message) throws Exception{
+        
+        String datas[] = c.convertToString(message.toString());
+        String senderId = datas[4];
+        String receiverId = datas[5];
+        String senderClientID = datas[2];
+        String receiverClientID = datas[3];
+        senderClientID = datas[3];
+        receiverClientID = datas[2];
+        PrivateChatDB db = new PrivateChatDB();
+        List<Message> list = db.GetAllMessage(senderId, receiverId);
+        String tempValue = "";
+        for(Message tempM: list){
+            PrivateChat chat = (PrivateChat)tempM;
+            tempValue = tempValue + chat.getHexResultWithSlash() + "\\$";
+        }
+        
+        String payload = "";
+        if(!list.isEmpty()){
+             payload = c.ToHex(datas[0])+"/"+c.ToHex(datas[1])+"/"+c.ToHex(senderClientID)+"/"+c.ToHex(receiverClientID)+"/"+c.ToHex(datas[4])+"\\$"+ tempValue.substring(0, tempValue.length()-2);
+            Publish(payload);
+            System.out.println("Donw");
+        } else {
+            payload = c.ToHex(datas[0]) + "/" + c.ToHex(datas[1]) + "/" + c.ToHex(senderClientID) + "/" + c.ToHex(receiverClientID) + "/" + c.ToHex(datas[4]) + "/" + c.ToHex("NoPrivateMessageFound");
+            Publish(payload);
+            System.out.println("Donw 2");
+        }
+        
+    }
     public void CreateNewUser(String message) throws Exception {
         String[] datas = message.split("/");
         String command = datas[0];

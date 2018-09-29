@@ -36,6 +36,13 @@ public class PrivateChat extends Message{
     public void setReceiverID(String receiverID) {
         this.receiverID = receiverID;
     }
+    
+    public String getHexResultWithSlash(){
+        String result = "";
+        Converter convert = new Converter();
+        result = convert.convertToHex(new String[]{getMessageId(), getContent(), getSentTime(), senderID, receiverID});
+        return result;
+    }
 
     @Override
     public String toString() {

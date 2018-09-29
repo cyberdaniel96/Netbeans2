@@ -5,6 +5,7 @@
  */
 package db;
 
+import MQTT.Converter;
 import domain.Message;
 import domain.PrivateChat;
 import java.sql.Connection;
@@ -12,6 +13,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -47,10 +49,13 @@ public class PrivateChatDB {
     }
     
     public List<Message> GetAllMessage(String senderID, String receiverID) throws Exception{
-        String sql = "select * from privatechat where senderID = ? AND receiverID = ?";
+        String sql = "SELECT * FROM privatechat WHERE ( senderID = ? AND receiverID = ? ) or ( senderID = ? AND receiverID = ? )" ;
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.setString(1, senderID);
         pstmt.setString(2, receiverID);
+        pstmt.setString(3, receiverID);
+        pstmt.setString(4, senderID);
+        
         ResultSet rs = pstmt.executeQuery();
         List<Message> list = new ArrayList<>();
         while(rs.next()){
@@ -89,14 +94,4 @@ public class PrivateChatDB {
         return newId;
     }
     
-    public static void main(String[] args) throws Exception{
-       PrivateChatDB db = new PrivateChatDB();
-       List<Message> list = db.GetAllMessage("1610480", "johnny96");
-       
-       for(Message chat: list){
-           System.out.println((PrivateChat)chat);
-       }
-       //
-        
-    }
 }
