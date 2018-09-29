@@ -96,6 +96,7 @@ public class PrivateChatDB {
        for(Message chat: list){
            System.out.println((PrivateChat)chat);
        }
+       //
         
     }
 }
