@@ -58,7 +58,8 @@ public class PrivateChatDB {
             list.add(message);
         }
         if(list.isEmpty()){
-            return null;
+            
+            return list;
         }
         return list;
     }
@@ -89,6 +90,12 @@ public class PrivateChatDB {
     }
     
     public static void main(String[] args) throws Exception{
+       PrivateChatDB db = new PrivateChatDB();
+       List<Message> list = db.GetAllMessage("1610480", "johnny96");
        
+       for(Message chat: list){
+           System.out.println((PrivateChat)chat);
+       }
+        
     }
 }
