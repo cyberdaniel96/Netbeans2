@@ -328,7 +328,7 @@ public class MQTT {
             u = udb.GetUser(userId);
             if (u.getPassword().equals(password)) {
                 payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("0") + "/"
-                        + c.ToHex(userId) + "/" + c.ToHex(u.getEmail());
+                        + c.ToHex(userId) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(u.getImage());
                 Publish(payload);
             } else {
                 payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("1");
