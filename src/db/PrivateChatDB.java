@@ -55,7 +55,7 @@ public class PrivateChatDB {
         pstmt.setString(2, receiverID);
         pstmt.setString(3, receiverID);
         pstmt.setString(4, senderID);
-        pstmt.setString(4, senderID);
+        pstmt.setString(5, senderID);
         ResultSet rs = pstmt.executeQuery();
         List<Message> list = new ArrayList<>();
         while(rs.next()){

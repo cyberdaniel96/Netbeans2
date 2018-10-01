@@ -39,7 +39,7 @@ public class MQTT {
     String topic = "MY/TARUC/LSS/000000001/PUB";
     int qos = 1;
     String broker = "tcp://test.mosquitto.org:1883";
-    String clientId = "server";
+    String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
     String ip = "192.168.0.153";
@@ -68,21 +68,18 @@ public class MQTT {
             @Override
             public void connectionLost(Throwable throwable) {
                 System.out.println("Connection Lost");
-                 
             }
 
             @Override
             public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
                 
                 try {
-                    
                     Converter c = new Converter();
                     String[] datas = mqttMessage.toString().split("/");
                     String command = c.ToString(datas[0]);
                     String receiverClientId = c.ToString(datas[3]);
                     
                     if (receiverClientId.equals(clientId)) {
-                        
                         System.out.println("Receive");
                         if (command.equals("004801")) {
                             CreateNewUser(mqttMessage.toString());
@@ -147,6 +144,8 @@ public class MQTT {
             public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
 
             }
+            
+            
         });
     }
 
@@ -193,9 +192,7 @@ public class MQTT {
             datas[7] = datas[6];
             String payload = c.convertToHex(new String[]{});
             Publish(payload);
-           
         }
-        
     }
 
     public  void GetAllPrivateMessage(String message) throws Exception{
@@ -203,6 +200,7 @@ public class MQTT {
         String datas[] = c.convertToString(message.toString());
         String senderId = datas[4];
         String receiverId = datas[5];
+        
         String senderClientID = datas[2];
         String receiverClientID = datas[3];
         senderClientID = datas[3];
