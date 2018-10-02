@@ -8,10 +8,12 @@ package db;
 import MQTT.Converter;
 import domain.Message;
 import domain.PrivateChat;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,13 +77,13 @@ public class PrivateChatDB {
         return list;
     }
     
-    public boolean UpdatePrivateMessage(String messageId, String delStatus) throws Exception {
-        String sql = "update privateChat set delStatus=? where messageID = ?";
+     public boolean UpdateMessage(String status, String[] messageID) throws Exception {
+        String sql = getUpdateQuery(messageID);
         PreparedStatement pstmt = con.prepareStatement(sql);
-                pstmt.setString(1,delStatus);
-                pstmt.setString(2,messageId);
+                pstmt.setString(1,status);
+                setParam(pstmt, messageID);
                 int result = pstmt.executeUpdate();
-                
+
                 if (result > 0)
                     return true;
                 else
@@ -93,6 +95,7 @@ public class PrivateChatDB {
         
         String sql = "select max(messageID) as latestID from PRIVATECHAT";
         PreparedStatement pstmt = con.prepareStatement(sql);
+        
         ResultSet rs = pstmt.executeQuery();
         boolean found = false;
         String newId = "";
@@ -112,4 +115,32 @@ public class PrivateChatDB {
         return newId;
     }
     
+    private String getUpdateQuery(String[] messageID){
+        StringBuilder sql = new StringBuilder("UPDATE `privatechat` SET delStatus = ? WHERE messageID IN ");
+        sql.append("(");
+        for (int index = 0; index < messageID.length; index++) {
+            if(!(index == messageID.length-1)){
+                 sql.append("?,");
+            }else{
+                sql.append("?");
+            }
+        }
+        sql.append(")");
+        return sql.toString();
+    }
+    
+    public void setParam(PreparedStatement pstmt, String[] messageID) throws SQLException{
+        int index = 0;
+        for(int i = 2; i <= messageID.length+1; i++){
+            pstmt.setString(i, messageID[index]);
+            index++;
+        }
+    }
+    
+    public static void main(String[] args) throws Exception {
+        PrivateChatDB db = new PrivateChatDB();
+        String[] arr = {"PM000001","PM000002","PM000003","PM000004","PM000005"};
+        System.out.println(db.UpdateMessage("NOTHING", arr));
+        
+    }
 }

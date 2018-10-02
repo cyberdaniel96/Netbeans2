@@ -131,6 +131,8 @@ public class MQTT {
                             AddPrivateMessage(mqttMessage.toString());
                         }else if(command.equals("004835")){
                             GetAllPrivateMessage(mqttMessage.toString());
+                        }else if(command.equals("004837")){
+                            DeletePrivateChat(mqttMessage.toString());
                         }
                     } else {
                         System.out.println("Not belong to server");
@@ -223,6 +225,27 @@ public class MQTT {
         }
         
     }
+    
+    public void DeletePrivateChat(String message) throws Exception{
+            String datas[] = c.convertToString(message);
+            String status = datas[4];
+            List<String> list = new ArrayList<>();
+            for(int index = 5; index < datas.length; index++){
+                list.add(datas[index]);
+            }
+            String[] id = list.toArray(new String[list.size()]);
+           String payload = "";
+           PrivateChatDB db = new PrivateChatDB();
+           if(db.UpdateMessage(status, id)){
+               payload = c.convertToHex(new String[]{datas[0], datas[1], datas[3],datas[2], c.ToHex("Deleted")});
+           }else{
+               payload = c.convertToHex(new String[]{datas[0], datas[1], datas[3],datas[2], c.ToHex("DeleteFailed")});
+           }
+           
+           Publish(payload);
+           
+    }
+    
     public void CreateNewUser(String message) throws Exception {
         String[] datas = message.split("/");
         String command = datas[0];
