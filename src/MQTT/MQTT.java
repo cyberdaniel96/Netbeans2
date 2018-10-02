@@ -127,7 +127,7 @@ public class MQTT {
                             NewFeedback(mqttMessage.toString());
                         }
                         
-                        if(command.equals("004833")){
+                        if(command.equals("004833")){ 
                             AddPrivateMessage(mqttMessage.toString());
                         }else if(command.equals("004835")){
                             GetAllPrivateMessage(mqttMessage.toString());
@@ -210,18 +210,16 @@ public class MQTT {
         String tempValue = "";
         for(Message tempM: list){
             PrivateChat chat = (PrivateChat)tempM;
-            tempValue = tempValue + chat.getHexResultWithSlash() + "\\$";
+            tempValue = tempValue + chat.getHexResultWithSlash()+ "\\$";
         }
         
         String payload = "";
         if(!list.isEmpty()){
              payload = c.ToHex(datas[0])+"/"+c.ToHex(datas[1])+"/"+c.ToHex(senderClientID)+"/"+c.ToHex(receiverClientID)+"/"+c.ToHex(datas[4])+"\\$"+ tempValue.substring(0, tempValue.length()-2);
             Publish(payload);
-            System.out.println("Donw");
         } else {
             payload = c.ToHex(datas[0]) + "/" + c.ToHex(datas[1]) + "/" + c.ToHex(senderClientID) + "/" + c.ToHex(receiverClientID) + "/" + c.ToHex(datas[4]) + "/" + c.ToHex("NoPrivateMessageFound");
             Publish(payload);
-            System.out.println("Donw 2");
         }
         
     }

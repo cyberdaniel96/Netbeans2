@@ -33,13 +33,14 @@ public class PrivateChatDB {
     }
     
     public boolean CreateMessage(PrivateChat m) throws Exception {
-        String sql = "insert into privatechat(messageId,content,sentTime,senderID,receiverID) values(?,?,?,?,?)";
+        String sql = "insert into privatechat(messageId,content,sentTime,senderID,receiverID) values(?,?,?,?,?,?)";
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.setString(1, m.getMessageId());
         pstmt.setString(2, m.getContent());
         pstmt.setString(3, m.getSentTime());
         pstmt.setString(4, m.getSenderID());
         pstmt.setString(5, m.getReceiverID());
+        pstmt.setString(6, "NOTHING");
         int result = pstmt.executeUpdate();
         if (result > 0) {
             return true;
@@ -59,16 +60,33 @@ public class PrivateChatDB {
         ResultSet rs = pstmt.executeQuery();
         List<Message> list = new ArrayList<>();
         while(rs.next()){
-            Message message = new PrivateChat(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5));
+            Message message =new PrivateChat(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5));
+           ((PrivateChat)message).setDelStatus(rs.getString(6));
+            //Alternative: 
+           /*
+            PrivateChat chat = (PrivateChat)message;
+            chat.setDelStatus("MyStatus");
+           */
             list.add(message);
         }
         if(list.isEmpty()){
-            
             return list;
         }
         return list;
     }
     
+    public boolean UpdatePrivateMessage(String messageId, String delStatus) throws Exception {
+        String sql = "update privateChat set delStatus=? where messageID = ?";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+                pstmt.setString(1,delStatus);
+                pstmt.setString(2,messageId);
+                int result = pstmt.executeUpdate();
+                
+                if (result > 0)
+                    return true;
+                else
+                    return false;
+    }
 
     public String getNewID() throws Exception{
 

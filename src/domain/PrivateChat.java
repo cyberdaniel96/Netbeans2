@@ -6,7 +6,7 @@
 package domain;
 
 import MQTT.Converter;
-
+import domain.Message;
 /**
  *
  * @author Daniel
@@ -14,11 +14,12 @@ import MQTT.Converter;
 public class PrivateChat extends Message{
     private String senderID;
     private String receiverID;
-    
+    private String delStatus = "NOTHING";
     public PrivateChat(String messageID, String content, String sentTime,String senderID, String receiverID) {
         super(messageID, content, sentTime);
         this.senderID = senderID;
         this.receiverID = receiverID;
+        
     }
 
     public String getSenderID() {
@@ -37,10 +38,18 @@ public class PrivateChat extends Message{
         this.receiverID = receiverID;
     }
     
+    public void setDelStatus(String delStatus){
+        this.delStatus = delStatus;
+    }
+    
+    public String getDelStatus(){
+        return delStatus;
+    }
+    
     public String getHexResultWithSlash(){
         String result = "";
         Converter convert = new Converter();
-        result = convert.convertToHex(new String[]{getMessageId(), getContent(), getSentTime(), senderID, receiverID});
+        result = convert.convertToHex(new String[]{getMessageId(), getContent(), getSentTime(), senderID, receiverID, delStatus});
         return result;
     }
 
