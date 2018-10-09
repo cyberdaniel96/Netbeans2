@@ -7,6 +7,7 @@ package domain;
 
 import MQTT.Converter;
 import domain.Message;
+
 /**
  *
  * @author Daniel
@@ -59,5 +60,5 @@ public class PrivateChat extends Message{
                 "Receiver ID : " + this.receiverID + "\n\n";
         return super.toString() + result;
     }
-   
+
 }
