@@ -5,6 +5,7 @@
  */
 package MQTT;
 
+import db.AppointmentDB;
 import db.FavouriteDB;
 import db.FeedbackDB;
 import db.LodgingDB;
@@ -42,7 +43,7 @@ public class MQTT {
     String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
-    String ip = "192.168.0.153";
+    String ip = "192.168.42.129";
 
     public MQTT() {
         persistence = new MemoryPersistence();
@@ -133,6 +134,10 @@ public class MQTT {
                             GetAllPrivateMessage(mqttMessage.toString());
                         }else if(command.equals("004837")){
                             DeletePrivateChat(mqttMessage.toString());
+                        }else if(command.equals("004823")){
+                            CreateNewAppointment(mqttMessage.toString());
+                        }else if(command.equals("004839")){
+                            GetNewAppointmentID(mqttMessage.toString());
                         }
                     } else {
                         System.out.println("Not belong to server");
@@ -146,6 +151,8 @@ public class MQTT {
             public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
 
             }
+
+         
             
             
         });
@@ -244,6 +251,23 @@ public class MQTT {
            
            Publish(payload);
            
+    }
+    
+    private void GetNewAppointmentID(String message) throws Exception {
+        String[] data = c.convertToString(message);
+        String command = data[0];
+        String reserve = data[1];
+        String sender = data[3];
+        String receiver = data[2];
+        
+        AppointmentDB db = new AppointmentDB();
+        String payload = c.convertToHex(new String[]{command, reserve, sender, receiver,db.NewAppointmentID()});
+        Publish(payload);
+        
+    }
+    
+    public void CreateNewAppointment(String message){
+        String[] tempDatas = c.convertToString(message);
     }
     
     public void CreateNewUser(String message) throws Exception {
