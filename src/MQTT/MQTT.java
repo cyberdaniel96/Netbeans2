@@ -79,7 +79,7 @@ public class MQTT {
                     String[] datas = mqttMessage.toString().split("/");
                     String command = c.ToString(datas[0]);
                     String receiverClientId = c.ToString(datas[3]);
-                    
+                    System.out.println(receiverClientId);
                     if (receiverClientId.equals(clientId)) {
                         System.out.println("Receive");
                         if (command.equals("004801")) {
