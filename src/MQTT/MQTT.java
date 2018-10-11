@@ -267,7 +267,18 @@ public class MQTT {
     }
     
     public void CreateNewAppointment(String message){
-        String[] tempDatas = c.convertToString(message);
+        String[] data = c.convertToString(message);
+        String command = data[0];
+        String reserve = data[1];
+        String senderClientId = data[3];
+        String receiverClientID = data[2];
+        
+        for(String temp: data){
+            System.out.println(temp);
+        }
+        
+        Publish(c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID}));
+        
     }
     
     public void CreateNewUser(String message) throws Exception {
