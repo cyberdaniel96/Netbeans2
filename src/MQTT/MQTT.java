@@ -12,6 +12,7 @@ import db.LodgingDB;
 import db.MessageDB;
 import db.PrivateChatDB;
 import db.UserDB;
+import domain.Appointment;
 import domain.Favourite;
 import domain.Lodging;
 import domain.Message;
@@ -266,18 +267,22 @@ public class MQTT {
         
     }
     
-    public void CreateNewAppointment(String message){
+    public void CreateNewAppointment(String message) throws Exception{
         String[] data = c.convertToString(message);
         String command = data[0];
         String reserve = data[1];
         String senderClientId = data[3];
         String receiverClientID = data[2];
-        
-        for(String temp: data){
-            System.out.println(temp);
+    
+        String payload = "";
+        Appointment app = new Appointment(data[4],data[5],"No Reason",data[6],data[7],data[8],data[9],data[10],data[11],data[12]);
+        AppointmentDB db = new AppointmentDB();
+        if(db.AddAppointment(app)){
+            payload = c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID, "Success"});
+        }else{
+             payload = c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID, "Fail"});
         }
-        
-        Publish(c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID}));
+       Publish(payload);
         
     }
     
