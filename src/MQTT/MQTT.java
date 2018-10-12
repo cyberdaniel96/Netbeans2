@@ -46,6 +46,10 @@ public class MQTT {
     Converter c = new Converter();
     String ip = "192.168.42.129";
 
+    public MQTT(String testing){
+        
+    }
+    
     public MQTT() {
         persistence = new MemoryPersistence();
 
@@ -139,6 +143,8 @@ public class MQTT {
                             CreateNewAppointment(mqttMessage.toString());
                         }else if(command.equals("004839")){
                             GetNewAppointmentID(mqttMessage.toString());
+                        }else if(command.equals("004831")){
+                            GetAllAppointments(mqttMessage.toString());
                         }
                     } else {
                         System.out.println("Not belong to server");
@@ -283,6 +289,41 @@ public class MQTT {
              payload = c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID, "Fail"});
         }
        Publish(payload);
+        
+    }
+    
+    public void GetAllAppointments(String message) throws Exception{
+        String[] data = c.convertToString(message);
+        String command = data[0];
+        String reserve = data[1];
+        String senderClientID = data[3];
+        String receiverClientID = data[2];
+        String firstHex = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID}) + "";
+        String msg = "";
+        String userID = data[4];
+        AppointmentDB db = new AppointmentDB();
+        List<Appointment> list = db.GetAllAppointment(userID);
+        if(!list.isEmpty()){
+            for(Appointment temp: list){
+                String appointmentID = temp.getAppointmentID();
+                String dateTime = temp.getDateTime();
+                String reason = temp.getReason();
+                String state = temp.getState();
+                String priority = temp.getPriority();
+                String comment = temp.getComment();
+                String status = temp.getStatus();
+                String lodgingID = temp.getLodgingID();
+                String tenantID = temp.getTenantID();
+                String ownerID = temp.getOwnerID();
+                
+                msg += "$" + c.convertToHex(new String[]{appointmentID, dateTime, reason, state, priority, comment, status, lodgingID
+                , tenantID, ownerID});
+                
+            }
+            Publish(firstHex + msg);
+        }else{
+           Publish(firstHex + "/NoAppointment");
+        }
         
     }
     
@@ -942,5 +983,5 @@ public class MQTT {
         }
         
     }
-
+    
 }

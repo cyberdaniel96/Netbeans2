@@ -5,6 +5,8 @@
  */
 package domain;
 
+import MQTT.Converter;
+
 /**
  *
  * @author Daniel
@@ -114,6 +116,7 @@ public class Appointment {
     public void setOwnerID(String ownerID) {
         this.ownerID = ownerID;
     }
+
     
     public String toString(){
         String message = "";
