@@ -46,10 +46,6 @@ public class MQTT {
     Converter c = new Converter();
     String ip = "192.168.42.129";
 
-    public MQTT(String testing){
-        
-    }
-    
     public MQTT() {
         persistence = new MemoryPersistence();
 
@@ -84,7 +80,7 @@ public class MQTT {
                     String[] datas = mqttMessage.toString().split("/");
                     String command = c.ToString(datas[0]);
                     String receiverClientId = c.ToString(datas[3]);
-                    System.out.println(receiverClientId);
+              
                     if (receiverClientId.equals(clientId)) {
                         System.out.println("Receive");
                         if (command.equals("004801")) {
@@ -281,7 +277,7 @@ public class MQTT {
         String receiverClientID = data[2];
     
         String payload = "";
-        Appointment app = new Appointment(data[4],data[5],"No Reason",data[6],data[7],data[8],data[9],data[10],data[11],data[12]);
+        Appointment app = new Appointment(data[4],data[5],"NOTHING",data[6],data[7],data[8],data[9],data[10],data[11],data[12]);
         AppointmentDB db = new AppointmentDB();
         if(db.AddAppointment(app)){
             payload = c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID, "Success"});
@@ -298,9 +294,10 @@ public class MQTT {
         String reserve = data[1];
         String senderClientID = data[3];
         String receiverClientID = data[2];
-        String firstHex = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID}) + "";
+        
         String msg = "";
         String userID = data[4];
+        System.out.println(userID);
         AppointmentDB db = new AppointmentDB();
         List<Appointment> list = db.GetAllAppointment(userID);
         if(!list.isEmpty()){
@@ -320,9 +317,9 @@ public class MQTT {
                 , tenantID, ownerID});
                 
             }
-            Publish(firstHex + msg);
+            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Success"}) + msg);
         }else{
-           Publish(firstHex + "/NoAppointment");
+           Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "NoAppointment"}));
         }
         
     }

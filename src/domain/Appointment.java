@@ -6,12 +6,13 @@
 package domain;
 
 import MQTT.Converter;
+import java.io.Serializable;
 
 /**
  *
  * @author Daniel
  */
-public class Appointment {
+public class Appointment implements Serializable{
     private String appointmentID;
     private String dateTime;
     private String reason;
