@@ -80,7 +80,7 @@ public class MQTT {
                     String[] datas = mqttMessage.toString().split("/");
                     String command = c.ToString(datas[0]);
                     String receiverClientId = c.ToString(datas[3]);
-              
+                    System.out.println(command);
                     if (receiverClientId.equals(clientId)) {
                         System.out.println("Receive");
                         if (command.equals("004801")) {
@@ -141,6 +141,8 @@ public class MQTT {
                             GetNewAppointmentID(mqttMessage.toString());
                         }else if(command.equals("004831")){
                             GetAllAppointments(mqttMessage.toString());
+                        }else if(command.equals("004829")){
+                            CancelAppointment(mqttMessage.toString());
                         }
                     } else {
                         System.out.println("Not belong to server");
@@ -277,7 +279,7 @@ public class MQTT {
         String receiverClientID = data[2];
     
         String payload = "";
-        Appointment app = new Appointment(data[4],data[5],"NOTHING",data[6],data[7],data[8],data[9],data[10],data[11],data[12]);
+        Appointment app = new Appointment(data[4],data[5],"NOTHINGBY"+data[11]+"ANDNOTHINGBY"+data[12],data[6],data[7],data[8],data[9],data[10],data[11],data[12]);
         AppointmentDB db = new AppointmentDB();
         if(db.AddAppointment(app)){
             payload = c.convertToHex(new String[]{command, reserve,senderClientId, receiverClientID, "Success"});
@@ -297,7 +299,6 @@ public class MQTT {
         
         String msg = "";
         String userID = data[4];
-        System.out.println(userID);
         AppointmentDB db = new AppointmentDB();
         List<Appointment> list = db.GetAllAppointment(userID);
         if(!list.isEmpty()){
@@ -322,6 +323,23 @@ public class MQTT {
            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "NoAppointment"}));
         }
         
+    }
+    
+    public void CancelAppointment(String message) throws Exception{
+        String[] data = c.convertToString(message);
+        String command = data[0];
+        String reserve = data[1];
+        String senderClientID = data[3];
+        String receiverClientID = data[2];
+        String appointmentID = data[4];
+        
+        AppointmentDB db = new AppointmentDB();
+        String payload = "";
+        if(db.CancelAppointment(appointmentID)){
+            payload = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Success"});
+        }else{
+            payload = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Failed"});
+        }
     }
     
     public void CreateNewUser(String message) throws Exception {

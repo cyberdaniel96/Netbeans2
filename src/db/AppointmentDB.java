@@ -99,14 +99,20 @@ public class AppointmentDB {
         return list;
     }
     
+     public boolean CancelAppointment(String appointmentID) throws Exception{
+         String sql =  "UPDATE `appointment` SET status = ? where appointmentID = ?";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+                pstmt.setString(1,"cancel");
+                pstmt.setString(2,appointmentID);
+                
+                int result = pstmt.executeUpdate();
+
+        return result > 0;
+     }
     
     public static void main(String[] args) throws Exception {
        // Appointment app = new Appointment("AP00000","30-09-2018 11:10:45","NOTHIGN","Penang","10","I am interesting your room","pending","L00000","1610480","johnny96");
         AppointmentDB db = new AppointmentDB();
-        List<Appointment> app = db.GetAllAppointment("1610480");
-        
-        for(Appointment p : app){
-            System.out.println(p);
-        }
+        System.out.println(db.CancelAppointment("AP00000"));
     }
 }
