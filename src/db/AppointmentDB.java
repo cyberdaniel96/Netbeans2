@@ -100,19 +100,38 @@ public class AppointmentDB {
     }
     
      public boolean CancelAppointment(String appointmentID) throws Exception{
-         String sql =  "UPDATE `appointment` SET status = ? where appointmentID = ?";
-        PreparedStatement pstmt = con.prepareStatement(sql);
-                pstmt.setString(1,"cancel");
-                pstmt.setString(2,appointmentID);
-                
-                int result = pstmt.executeUpdate();
+         String sql = "UPDATE `appointment` SET status = ? where appointmentID = ?";
+         PreparedStatement pstmt = con.prepareStatement(sql);
+         pstmt.setString(1, "cancel");
+         pstmt.setString(2, appointmentID);
 
-        return result > 0;
+         int result = pstmt.executeUpdate();
+
+         return result > 0;
+     }
+     
+      public boolean UpdateAppointment(Appointment app) throws Exception{
+          String sql = "UPDATE `appointment` SET `dateTime`= ? ,`reason`= ? ,`state`= ?,`priority`= ?,`comment`=?,`status`=?,`lodgingID`=?,`tenantID`=?,`ownerID`=? WHERE `appointmentID`= ? ";
+          PreparedStatement pstmt = con.prepareStatement(sql);
+          pstmt.setString(1, app.getDateTime());
+          pstmt.setString(2, app.getReason());
+          pstmt.setString(3, app.getState());
+          pstmt.setString(4, app.getPriority());
+          pstmt.setString(5, app.getComment());
+          pstmt.setString(6, app.getStatus());
+          pstmt.setString(7, app.getLodgingID());
+          pstmt.setString(8, app.getTenantID());
+          pstmt.setString(9, app.getOwnerID());
+          pstmt.setString(10, app.getAppointmentID());
+
+          int result = pstmt.executeUpdate();
+
+          return result > 0;
      }
     
     public static void main(String[] args) throws Exception {
-       // Appointment app = new Appointment("AP00000","30-09-2018 11:10:45","NOTHIGN","Penang","10","I am interesting your room","pending","L00000","1610480","johnny96");
-        AppointmentDB db = new AppointmentDB();
-        System.out.println(db.CancelAppointment("AP00000"));
+      //  Appointment app = new Appointment("AP00005","30-09-2018AND11:10:45","Gothing","Penang","10","I am interesting your room","pending","L00000","1610480","johnny96");
+      //  AppointmentDB db = new AppointmentDB();
+      //  db.UpdateAppointment(app);
     }
 }

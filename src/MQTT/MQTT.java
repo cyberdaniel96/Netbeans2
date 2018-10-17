@@ -44,7 +44,7 @@ public class MQTT {
     String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
-    String ip = "192.168.42.129";
+    String ip = "192.168.0.171";
 
     public MQTT() {
         persistence = new MemoryPersistence();
@@ -143,6 +143,8 @@ public class MQTT {
                             GetAllAppointments(mqttMessage.toString());
                         }else if(command.equals("004829")){
                             CancelAppointment(mqttMessage.toString());
+                        }else if(command.equals("004827")){
+                            UpdateAppointment(mqttMessage.toString());
                         }
                     } else {
                         System.out.println("Not belong to server");
@@ -339,6 +341,22 @@ public class MQTT {
             payload = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Success"});
         }else{
             payload = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Failed"});
+        }
+    }
+    
+    public void UpdateAppointment(String message) throws Exception{
+        String data[] = c.convertToString(message);
+        String command = data[0];
+        String reserve = data[1];
+        String senderClientID = data[3];
+        String receiverClientID = data[2];
+        
+        Appointment app = new Appointment(data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13]);
+        AppointmentDB db = new AppointmentDB();
+        if (db.UpdateAppointment(app)) {
+            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Success"}));
+        } else {
+            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Failed"}));
         }
     }
     
