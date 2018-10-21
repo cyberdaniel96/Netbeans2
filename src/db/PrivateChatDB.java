@@ -127,6 +127,7 @@ public class PrivateChatDB {
             }
         }
         sql.append(")");
+        System.out.println(sql.toString());
         return sql.toString();
     }
     
