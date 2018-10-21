@@ -133,5 +133,7 @@ public class AppointmentDB {
       //  Appointment app = new Appointment("AP00005","30-09-2018AND11:10:45","Gothing","Penang","10","I am interesting your room","pending","L00000","1610480","johnny96");
       //  AppointmentDB db = new AppointmentDB();
       //  db.UpdateAppointment(app);
+        
+        
     }
 }
