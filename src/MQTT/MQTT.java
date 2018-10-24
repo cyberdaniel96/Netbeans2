@@ -158,10 +158,6 @@ public class MQTT {
             public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
 
             }
-
-         
-            
-            
         });
     }
 
@@ -241,23 +237,25 @@ public class MQTT {
     }
     
     public void DeletePrivateChat(String message) throws Exception{
-            String datas[] = c.convertToString(message);
-            String status = datas[4];
-            List<String> list = new ArrayList<>();
-            for(int index = 5; index < datas.length; index++){
-                list.add(datas[index]);
-            }
-            String[] id = list.toArray(new String[list.size()]);
-           String payload = "";
-           PrivateChatDB db = new PrivateChatDB();
-           if(db.UpdateMessage(status, id)){
-               payload = c.convertToHex(new String[]{datas[0], datas[1], datas[3],datas[2], c.ToHex("Deleted")});
-           }else{
-               payload = c.convertToHex(new String[]{datas[0], datas[1], datas[3],datas[2], c.ToHex("DeleteFailed")});
-           }
-           
-           Publish(payload);
-           
+        String[] data = c.convertToString(message);
+        String command = data[0];
+        String reserve = data[1];
+        String senderClientID = data[3];
+        String receiverClientID = data[2];
+        String sender = data[4];
+        String receiver = data[5];
+        String role = data[6];
+        String status = data[7];
+        
+        PrivateChatDB db = new PrivateChatDB();
+        boolean delete = db.DeletePrivateChat(sender, receiver, role, status);
+        System.out.println(delete);
+        if(delete){
+            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Success"}));
+        }else{
+            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Failed"}));
+        }
+        
     }
     
     private void GetNewAppointmentID(String message) throws Exception {
@@ -293,36 +291,27 @@ public class MQTT {
     }
     
     public void GetAllAppointments(String message) throws Exception{
-        String[] data = c.convertToString(message);
-        String command = data[0];
-        String reserve = data[1];
-        String senderClientID = data[3];
-        String receiverClientID = data[2];
+        String[] datas = c.convertToString(message);
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderID = datas[3];
+        String receiverID = datas[2];
         
-        String msg = "";
-        String userID = data[4];
+        String tenantID = datas[4];
         AppointmentDB db = new AppointmentDB();
-        List<Appointment> list = db.GetAllAppointment(userID);
-        if(!list.isEmpty()){
-            for(Appointment temp: list){
-                String appointmentID = temp.getAppointmentID();
-                String dateTime = temp.getDateTime();
-                String reason = temp.getReason();
-                String state = temp.getState();
-                String priority = temp.getPriority();
-                String comment = temp.getComment();
-                String status = temp.getStatus();
-                String lodgingID = temp.getLodgingID();
-                String tenantID = temp.getTenantID();
-                String ownerID = temp.getOwnerID();
-                
-                msg += "$" + c.convertToHex(new String[]{appointmentID, dateTime, reason, state, priority, comment, status, lodgingID
-                , tenantID, ownerID});
-                
-            }
-            Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Success"}) + msg);
-        }else{
-           Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "NoAppointment"}));
+        List<Appointment> appList = db.GetAllAppointment(tenantID);
+        String payload = c.convertToHex(new String[]{command, reserve, senderID, receiverID, Integer.toString(appList.size())}) + "";
+    
+        for(Appointment app: appList){
+            payload += "$" + c.convertToHex(new String[]{app.getAppointmentID(), app.getDateTime(), app.getReason(), app.getState(),
+            app.getPriority(), app.getComment(), app.getStatus(), app.getLodgingID(), app.getTenantID(), app.getOwnerID()});
+        }
+       
+        if(!appList.isEmpty()){
+            Publish(payload);
+        }else
+        {
+            Publish(payload + "/" + c.ToHex("Failed"));
         }
         
     }

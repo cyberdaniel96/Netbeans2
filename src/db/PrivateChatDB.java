@@ -78,19 +78,60 @@ public class PrivateChatDB {
         return list;
     }
     
-     public boolean UpdateMessage(String status, String[] messageID) throws Exception {
-        String sql = getUpdateQuery(messageID);
-        PreparedStatement pstmt = con.prepareStatement(sql);
-                pstmt.setString(1,status);
-                setParam(pstmt, messageID);
-                int result = pstmt.executeUpdate();
-
-                if (result > 0)
-                    return true;
-                else
-                    return false;
+    public boolean DeletePrivateChat(String sender, String receiver, String role, String status) throws Exception{
+        if(role.equals("TENANT")){
+            return DeletePrivateChatStudent(sender, receiver, status);
+        }else if(role.equals("OWNER")){
+            return DeletePrivateChatOwner(sender, receiver, status);
+        }
+        System.err.println("Unable to delete private chat");
+        return false;
+        
     }
+    
+    private boolean DeletePrivateChatStudent(String sender, String receiver, String status) throws Exception{
+        String sql = "UPDATE PRIVATECHAT SET delStatus = ? WHERE (senderID = ? AND receiverID = ?)"
+                + " OR (senderID = ? AND receiverID = ?)";
+        System.out.println(sender +" "+receiver+" "+status);
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        String temp[] = status.split("AND");
+        String col1 = "";
+        if(temp[1].equals(receiver)){
+            col1 = sender + "AND" + receiver; 
+        }else if(temp[1].equals("NOTHING")){
+            col1 = sender + "AND" + "NOTHING";
+        }
+        pstmt.setString(1,col1);
+        pstmt.setString(2,sender);
+        pstmt.setString(3,receiver);
+        pstmt.setString(4,receiver);
+        pstmt.setString(5,sender);
+        int result = pstmt.executeUpdate();
+        
+        return result > 0;
+    }
+    
+    private boolean DeletePrivateChatOwner(String sender, String receiver, String status) throws SQLException{
+         String sql = "UPDATE PRIVATECHAT SET delStatus = ? WHERE (senderID = ? AND receiverID = ?)"
+                + " OR (senderID = ? AND receiverID = ?)";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        String temp[] = status.split("AND");
+        String col1 = "";
+        if(temp[0].equals(receiver)){
+            col1 = receiver + "AND" + sender; 
+        }else if(temp[0].equals("NOTHING")){
+            col1 = "NOTHING'" + "AND" + sender;
+        }
+        pstmt.setString(1,col1);
+        pstmt.setString(2,sender);
+        pstmt.setString(3,receiver);
+        pstmt.setString(4,receiver);
+        pstmt.setString(5,sender);
+        int result = pstmt.executeUpdate();
 
+        return result > 0;
+    }
+    
     public String getNewID() throws Exception{
 
         
@@ -116,33 +157,7 @@ public class PrivateChatDB {
         return newId;
     }
     
-    private String getUpdateQuery(String[] messageID){
-        StringBuilder sql = new StringBuilder("UPDATE `privatechat` SET delStatus = ? WHERE messageID IN ");
-        sql.append("(");
-        for (int index = 0; index < messageID.length; index++) {
-            if(!(index == messageID.length-1)){
-                 sql.append("?,");
-            }else{
-                sql.append("?");
-            }
-        }
-        sql.append(")");
-        System.out.println(sql.toString());
-        return sql.toString();
-    }
-    
-    public void setParam(PreparedStatement pstmt, String[] messageID) throws SQLException{
-        int index = 0;
-        for(int i = 2; i <= messageID.length+1; i++){
-            pstmt.setString(i, messageID[index]);
-            index++;
-        }
-    }
-    
     public static void main(String[] args) throws Exception {
-        PrivateChatDB db = new PrivateChatDB();
-        String[] arr = {"PM000001","PM000002","PM000003","PM000004","PM000005"};
-        System.out.println(db.UpdateMessage("NOTHING", arr));
         
     }
 }
