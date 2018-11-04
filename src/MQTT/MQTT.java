@@ -40,11 +40,12 @@ public class MQTT {
     MqttClient client;
     String topic = "MY/TARUC/LSS/000000001/PUB";
     int qos = 1;
-    String broker = "tcp://test.mosquitto.org:1883";
+    //String broker = "tcp://test.mosquitto.org:1883";
+    String broker = "tcp://192.168.0.172:1883";
     String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
-    String ip = "192.168.0.171";
+    String ip = "192.168.42.180";
 
     public MQTT() {
         persistence = new MemoryPersistence();
@@ -64,6 +65,7 @@ public class MQTT {
 
         } catch (MqttException e) {
             System.out.println("Exception");
+            e.printStackTrace();
         }
 
         client.setCallback(new MqttCallback() {
@@ -146,6 +148,14 @@ public class MQTT {
                         }else if(command.equals("004827")){
                             UpdateAppointment(mqttMessage.toString());
                         }
+                        
+                        //notification
+                        if(command.equals("004841")){
+                            System.err.println(command);
+                            CreateNotification(mqttMessage.toString());
+                        }else if(command.equals("004843")){
+                            
+                        }
                     } else {
                         System.out.println("Not belong to server");
                     }
@@ -177,6 +187,22 @@ public class MQTT {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public void CreateNotification(String message) throws Exception{
+        String splitDollar[] = message.split("\\$");
+        String serverData[] = c.convertToString(splitDollar[0]);
+        String notiData[] = c.convertToString(splitDollar[1]);
+        
+        String command = serverData[0];
+        String reserve = serverData[1];
+        String senderClientID = serverData[3];
+        String receiverClientID = serverData[2];
+        
+        String head = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, ""});
+        String payload = head + "$" + splitDollar[1] + "$" + splitDollar[2];
+        Publish(payload);
+        
     }
     
     public void AddPrivateMessage(String message) throws Exception{

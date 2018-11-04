@@ -73,10 +73,10 @@ public class AppointmentDB {
     }
     
      public List<Appointment> GetAllAppointment(String userID) throws Exception{
-        String sql = "SELECT * FROM `appointment` WHERE tenantID = ? " ;
+        String sql = "SELECT * FROM `appointment` WHERE tenantID = ? or ownerID = ?" ;
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.setString(1, userID);
-        
+        pstmt.setString(2, userID);
         ResultSet rs = pstmt.executeQuery();
         List<Appointment> list = new ArrayList<>();
         while(rs.next()){
