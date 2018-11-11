@@ -42,7 +42,7 @@ public class PrivateChatDB {
         pstmt.setString(3, m.getSentTime());
         pstmt.setString(4, m.getSenderID());
         pstmt.setString(5, m.getReceiverID());
-        pstmt.setString(6, "NOTHING");
+        pstmt.setString(6, "NOTHINGANDNOTHING");
         int result = pstmt.executeUpdate();
         if (result > 0) {
             return true;
