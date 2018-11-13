@@ -50,6 +50,7 @@ public class MQTT {
     String topic = "MY/TARUC/LSS/000000001/PUB";
     int qos = 1;
     String broker = "tcp://test.mosquitto.org:1883";
+   // String broker = "tcp://192.168.42.188:1883";
     String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
@@ -249,58 +250,86 @@ public class MQTT {
         Publish(payload);
     }
     
-    public void GetTenant(String message) throws Exception{
+    public void GetTenant(String message) throws Exception {
         String splitDollar[] = message.split("\\$");
         String serverData[] = c.convertToString(splitDollar[0]);
         String data[] = c.convertToString(splitDollar[1]);
+
         String tenantID = data[0];
+        String mycommand = data[1];
+
         TenantDB tdb = new TenantDB();
         LeaseDB ldb = new LeaseDB();
         LodgingDB loDB = new LodgingDB();
-        System.err.println(tenantID);
+
         ArrayList<Tenant> tList = tdb.GetTenantViaUserID(tenantID);
-        ArrayList<Lease> lList = new ArrayList<>();
-        ArrayList<Lodging> loList = new ArrayList<>();
-        
-        if(!tList.isEmpty()){
-            for(Tenant t : tList){
-                Lease lease = ldb.GetLease(t.getLeaseID());
-                lList.add(lease);
-            }
-        }
-        
-        if(!lList.isEmpty()){
-            for(Lease l: lList){
-                Lodging lodging = loDB.GetLodging(l.getLodgingID());
-                loList.add(lodging);
-            }
-        }
-        
-        
+        ArrayList<String> item = new ArrayList<>();
+
         String command = serverData[0];
         String reserve = serverData[1];
         String senderClientId = serverData[3];
         String receiverClientID = serverData[2];
-        
-        PublishTenant(c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, ""}),tList, lList, loList);
+
+        if (mycommand.equals("GETLOD")) {
+            if (!tList.isEmpty()) {
+                for (Tenant t : tList) {
+                    Lease l = ldb.GetLease(t.getLeaseID());
+                    Lodging lo = loDB.GetLodging(l.getLodgingID());
+
+                    item.add(c.convertToHex(new String[]{
+                        mycommand//0
+                        , l.getLeaseID()//1
+                        , l.getDueDay()//2
+                        , new SimpleDateFormat("dd-MM-yyyy").format(l.getIssueDate())//3
+                        , l.getStatus()//4
+                        , l.getLodgingID()//5
+                        , lo.getImage()//6
+                        , lo.getTitle()//7
+                        , lo.getAddress()}));//8
+                }
+            }
+
+            publishLodgingWithLease(c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, ""}), item);
+        }
+        if (mycommand.equals("GETTENANT")) {
+            String leaseID = data[2];
+            Tenant t = tdb.GetSelectedTenantWithLeaseID(tenantID,leaseID);
+            System.err.println(t.getLeaseID());
+            String tData = "";
+            if (t != null) {
+                tData = c.convertToHex(new String[]{
+                    mycommand
+                    , t.getLeaseID() //1
+                    , t.getRoomType()//2
+                    , t.getRole()//3
+                    , new SimpleDateFormat("dd-MM-yyyy").format(t.getLeaseStart())//4
+                    , new SimpleDateFormat("dd-MM-yyyy").format(t.getLeaseEnd())//5
+                    , String.format("%f", t.getRent())//6
+                    , String.format("%f", t.getDeposit())//7
+                    , t.getStatus(), new SimpleDateFormat("dd-MM-yyyy").format(t.getBreakDate())//8
+                    , t.getReason()//9
+                    , t.getUserID()//10
+                    , t.getLeaseID()//11
+                });
+
+            }
+            
+            Publish(c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, ""}) + "$" + tData);
+        }
+
     }
     
-    private void PublishTenant(String serverData, ArrayList<Tenant> tList, ArrayList<Lease> lList,ArrayList<Lodging> loList ){
-        int countTenant = tList.size();
-        int countLease = lList.size();
-        int countLodging = loList.size();
-        
-        String payloadLolist = "";
-        if (countLodging != 0) {
-            for (Lodging lo : loList) {
-                payloadLolist += c.convertToHex(new String[]{lo.getImage(), lo.getTitle(), lo.getAddress(), String.format("%d", countLodging)})+"@";
+    private void publishLodgingWithLease(String serverdata, ArrayList<String> list){
+        String data = "";
+        if(!list.isEmpty()){
+            for(String temp: list){
+                data += temp + "/" +c.ToHex(String.format("%d", list.size())) + "@";
             }
-         
+            System.out.println(data);
+            Publish(serverdata + "$" + data.substring(0, data.length()-1));
         }
-        
-        Publish(serverData + "$" +payloadLolist);
     }
-
+ 
     public void CreateNotification(String message) throws Exception {
         String splitDollar[] = message.split("\\$");
         String serverData[] = c.convertToString(splitDollar[0]);
@@ -1330,4 +1359,10 @@ public class MQTT {
      * ***********
      */
 
+}
+
+class test{
+    public static void main(String[] args) {
+        
+    }
 }
