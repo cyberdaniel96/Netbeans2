@@ -10,7 +10,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  *
@@ -195,7 +197,13 @@ public class TenantDB {
             t.setRent(rs.getDouble("Rent"));
             t.setDeposit(rs.getDouble("Deposit"));
             t.setStatus(rs.getString("Status"));
-            t.setBreakDate(rs.getDate("BreakDate"));
+            if(rs.getDate("BreakDate") == null){
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                Date javaDate = sdf.parse("06/10/2013 18:29:09");
+                t.setBreakDate(new java.sql.Date(javaDate.getTime()));
+            }else{
+                t.setBreakDate(rs.getDate("BreakDate"));
+            }
             t.setReason(rs.getString("Reason"));
             t.setUserID(rs.getString("UserID"));
             t.setLeaseID(rs.getString("LeaseID"));
@@ -204,4 +212,20 @@ public class TenantDB {
         return t;
     }
     
+     public boolean UpdateTenantStatus(Tenant t) throws Exception{
+         String sql = "";
+         
+         if(t.getStatus().equals("Rejected")){
+             sql = "Update tenant set Status=?,Reason=? where UserID=? AND LeaseID = ?";
+             pstmt = con.prepareStatement(sql);            
+             pstmt.setString(1, t.getStatus());
+             pstmt.setString(2, t.getReason());
+             pstmt.setString(3, t.getUserID());
+             pstmt.setString(4, t.getLeaseID());
+         }
+         
+         int result = pstmt.executeUpdate();
+
+         return result > 0;
+     }
 }

@@ -188,8 +188,9 @@ public class MQTT {
                         }
                          
                         if(command.equals("004849")){
-                            
                             GetTenant(mqttMessage.toString());
+                        }else if(command.equals("004851")){
+                            UpdateTenantStatus(mqttMessage.toString());
                         }
                       
                     } else {
@@ -317,6 +318,26 @@ public class MQTT {
             Publish(c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, ""}) + "$" + tData);
         }
 
+    }
+    
+    private void UpdateTenantStatus(String message) throws Exception{
+        String[] data = message.split("\\$");
+        String[] head = c.convertToString(data[0]);
+        String[] tail = c.convertToString(data[1]);
+        
+        TenantDB db = new TenantDB();
+        Tenant t = new Tenant();
+        t.setStatus(tail[0]);
+        t.setReason(tail[1]);
+        t.setUserID(tail[2]);
+        t.setLeaseID(tail[3]);
+        
+        System.err.println(tail[0]);
+        System.err.println(tail[1]);
+        System.err.println(tail[2]);
+        System.err.println(tail[3]);
+        db.UpdateTenantStatus(t);
+        
     }
     
     private void publishLodgingWithLease(String serverdata, ArrayList<String> list){
@@ -1359,10 +1380,4 @@ public class MQTT {
      * ***********
      */
 
-}
-
-class test{
-    public static void main(String[] args) {
-        
-    }
 }
