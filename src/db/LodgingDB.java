@@ -7,6 +7,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
+/** @author chang **/
+
 public class LodgingDB {
 
     PreparedStatement pstmt;
@@ -21,7 +23,7 @@ public class LodgingDB {
     }
 
     public ArrayList<Lodging> GetAllLodging() throws Exception {
-        String sql = "select * from lodging";
+        String sql = "select * from lodging where status='Active'";
         pstmt = con.prepareStatement(sql);
         ResultSet rs = pstmt.executeQuery();
         ArrayList<Lodging> la = new ArrayList<Lodging>();
@@ -34,16 +36,17 @@ public class LodgingDB {
             l.setFacility(rs.getString("facility"));
             l.setLodgingType(rs.getString("lodgingType"));
             l.setDescription(rs.getString("description"));
-            l.setExpireDate(rs.getString("expireDate"));
+            l.setExpireDate(rs.getDate("expireDate"));
             l.setUserId(rs.getString("userId"));
             l.setImage(rs.getString("image"));
+            l.setStatus(rs.getString("status"));
             la.add(l);
         }
         return la;
     }
 
     public boolean CreateLodging(Lodging l) throws Exception {
-        String sql = "insert into lodging(lodgingId,title,address,price,facility,lodgingType,description,expireDate,userId,image,message) values(?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "insert into lodging(lodgingId,title,address,price,facility,lodgingType,description,expireDate,userId,image,message,status) values(?,?,?,?,?,?,?,?,?,?,?,'Active')";
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.setString(1, l.getLodgingId());
         pstmt.setString(2, l.getTitle());
@@ -52,16 +55,13 @@ public class LodgingDB {
         pstmt.setString(5, l.getFacility());
         pstmt.setString(6, l.getLodgingType());
         pstmt.setString(7, l.getDescription());
-        pstmt.setString(8, l.getExpireDate());
+        pstmt.setDate(8, l.getExpireDate());
         pstmt.setString(9, l.getUserId());
         pstmt.setString(10, l.getImage());
         pstmt.setInt(11, 0);
+        
         int result = pstmt.executeUpdate();
-        if (result > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return (result > 0);
     }
 
     public String NewLodgingId() throws Exception {
@@ -99,10 +99,12 @@ public class LodgingDB {
             l.setFacility(rs.getString("facility"));
             l.setLodgingType(rs.getString("lodgingType"));
             l.setDescription(rs.getString("description"));
-            l.setExpireDate(rs.getString("expireDate"));
+            l.setExpireDate(rs.getDate("expireDate"));
             l.setUserId(rs.getString("userId"));
             l.setImage(rs.getString("image"));
             l.setMessage(rs.getInt("message"));
+            l.setStatus(rs.getString("status"));
+            l.setUserId(rs.getString("userId"));
         } else {
             l = null;
         }
@@ -110,7 +112,7 @@ public class LodgingDB {
     }
 
     public ArrayList<Lodging> GetUserLodging(String userId) throws Exception {
-        String sql = "select * from lodging where userId = ?";
+        String sql = "select * from lodging where status Not In('Inactive') AND userId = ?";
         pstmt = con.prepareStatement(sql);
         pstmt.setString(1, userId);
         ResultSet rs = pstmt.executeQuery();
@@ -124,17 +126,18 @@ public class LodgingDB {
             l.setFacility(rs.getString("facility"));
             l.setLodgingType(rs.getString("lodgingType"));
             l.setDescription(rs.getString("description"));
-            l.setExpireDate(rs.getString("expireDate"));
+            l.setExpireDate(rs.getDate("expireDate"));
             l.setUserId(rs.getString("userId"));
             l.setImage(rs.getString("image"));
             l.setMessage(rs.getInt("message"));
+            l.setStatus(rs.getString("status"));
             la.add(l);
         }
         return la;
     }
 
     public boolean UpdateLodging(Lodging l) throws Exception {
-        String sql = "update lodging set title=?,address=?,price=?,facility=?,lodgingType=?,description=?,expireDate=? where lodgingId=?";
+        String sql = "update lodging set title=?,address=?,price=?,facility=?,lodgingType=?,description=?,expireDate=?,status=? where lodgingId=?";
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.setString(1, l.getTitle());
         pstmt.setString(2, l.getAddress());
@@ -142,15 +145,12 @@ public class LodgingDB {
         pstmt.setString(4, l.getFacility());
         pstmt.setString(5, l.getLodgingType());
         pstmt.setString(6, l.getDescription());
-        pstmt.setString(7, l.getExpireDate());
-        pstmt.setString(8, l.getLodgingId());
+        pstmt.setDate(7, l.getExpireDate());
+        pstmt.setString(8, l.getStatus());
+        pstmt.setString(9, l.getLodgingId());
+        
         int result = pstmt.executeUpdate();
-
-        if (result > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return (result > 0);
     }
     
     public ArrayList<Lodging> GetSomeLodging(String address) throws Exception {
@@ -168,9 +168,10 @@ public class LodgingDB {
             l.setFacility(rs.getString("facility"));
             l.setLodgingType(rs.getString("lodgingType"));
             l.setDescription(rs.getString("description"));
-            l.setExpireDate(rs.getString("expireDate"));
+            l.setExpireDate(rs.getDate("expireDate"));
             l.setUserId(rs.getString("userId"));
             l.setImage(rs.getString("image"));
+            l.setStatus(rs.getString("status"));
             la.add(l);
         }
         return la;
@@ -182,10 +183,29 @@ public class LodgingDB {
         pstmt.setInt(1, message);
         pstmt.setString(2, lodgingId);
         int result = pstmt.executeUpdate();
-        if (result > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return (result > 0);
+    }
+    
+    public void IsExpiryCheck()throws Exception {
+        String sql = "update lodging set status='Expired' where status='Active' AND expireDate<=CURDATE()";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        pstmt.executeUpdate();
+    }
+    
+    public boolean RenewLodging(Lodging l) throws Exception{
+        String sql = "update lodging set expireDate=?,status='Active' where lodgingId=?";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        pstmt.setDate(1, l.getExpireDate());
+        pstmt.setString(2, l.getLodgingId());
+        int result = pstmt.executeUpdate();        
+        return (result > 0);
+    }
+    
+    public boolean RemoveLodging(String lodgingID) throws Exception{
+        String sql = "update lodging set status='Inactive' where lodgingId=?";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, lodgingID);
+        int result = pstmt.executeUpdate();
+        return (result > 0);
     }
 }

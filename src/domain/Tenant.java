@@ -1,16 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package domain;
 
 import java.sql.Date;
 
-/**
- *
- * @author Daniel
- */
+/** @author chang **/
+
 public class Tenant {
     private String tenantID, roomType, role, status, reason, leaseID, userID;
     private double rent, deposit;

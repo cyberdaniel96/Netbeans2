@@ -125,15 +125,34 @@ public class AppointmentDB {
           pstmt.setString(10, app.getAppointmentID());
 
           int result = pstmt.executeUpdate();
-
+          
           return result > 0;
      }
-    
-    public static void main(String[] args) throws Exception {
-      //  Appointment app = new Appointment("AP00005","30-09-2018AND11:10:45","Gothing","Penang","10","I am interesting your room","pending","L00000","1610480","johnny96");
-      //  AppointmentDB db = new AppointmentDB();
-      //  db.UpdateAppointment(app);
+      
+      public List<Appointment> GetAllAppointment(String visitDate, String LodgingID) throws Exception{
+        String sql = "SELECT * FROM `appointment` WHERE dateTime=? AND lodgingID=? AND Status NOT IN ('cancel') Order by priority" ;
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, visitDate);
+        pstmt.setString(2, LodgingID);
         
+        ResultSet rs = pstmt.executeQuery();
+        List<Appointment> appointmentList = new ArrayList<>();
+        while(rs.next()){
+            Appointment app = new Appointment(
+            rs.getString(1),
+            rs.getString(2),
+            rs.getString(3),
+            rs.getString(4),
+            rs.getString(5),
+            rs.getString(6),
+            rs.getString(7),
+            rs.getString(8),
+            rs.getString(9),
+            rs.getString(10));
+            appointmentList.add(app);
+        }
         
+        return appointmentList;
     }
+
 }

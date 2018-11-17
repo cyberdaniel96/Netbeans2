@@ -5,26 +5,6 @@
  */
 package MQTT;
 
-import db.AppointmentDB;
-import db.CodeGeneratorDB;
-import db.FavouriteDB;
-import db.FeedbackDB;
-import db.LeaseDB;
-import db.LodgingDB;
-import db.MessageDB;
-import db.PrivateChatDB;
-import db.TenantDB;
-import db.UserDB;
-import domain.Appointment;
-import domain.CodeGenerator;
-import domain.Favourite;
-import domain.Lodging;
-import domain.Message;
-import domain.User;
-import domain.Feedback;
-import domain.Lease;
-import domain.PrivateChat;
-import domain.Tenant;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -43,6 +23,8 @@ import javax.swing.ImageIcon;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import service.SendEmail;
+import domain.*;
+import db.*;
 
 public class MQTT {
 
@@ -56,6 +38,16 @@ public class MQTT {
     Converter c = new Converter();
     String ip = "192.168.42.180";
 
+     String serverData = c.convertToHex(new String[]{
+                "004841",
+                "000000000000000000000000",
+                "serverLSSserver",
+                "android",
+                " "
+               
+        });
+
+    
     public MQTT() {
         persistence = new MemoryPersistence();
 
@@ -161,7 +153,6 @@ public class MQTT {
 
                         //notification
                         if (command.equals("004841")) {
-                            System.err.println(command);
                             CreateNotification(mqttMessage.toString());
                         } else if (command.equals("004843")) {
                             //delete notification
@@ -174,18 +165,61 @@ public class MQTT {
                             CreateVerificationCode(mqttMessage.toString());
                         }
 
-                        //chin ler
+//                        //chin ler
+//                        if (command.equals("004824")) {
+//                            CreateNewLease(mqttMessage.toString());
+//                        } else if (command.equals("004828")) {
+//                            GetAllLease(mqttMessage.toString());
+//                        } else if (command.equals("004830")) {
+//                            GetAllTenant(mqttMessage.toString());
+//                        } else if (command.equals("004832")) {
+//                            AddTenants(mqttMessage.toString());
+//                        } else if (command.equals("004836")) {
+//                            UpdateTenant(mqttMessage.toString());
+//                        }
+                        
                         if (command.equals("004824")) {
                             CreateNewLease(mqttMessage.toString());
+                        } else if (command.equals("004826")) {
+                            VerifyTenant(mqttMessage.toString());
                         } else if (command.equals("004828")) {
                             GetAllLease(mqttMessage.toString());
                         } else if (command.equals("004830")) {
                             GetAllTenant(mqttMessage.toString());
                         } else if (command.equals("004832")) {
                             AddTenants(mqttMessage.toString());
+                        } else if (command.equals("004834")) {
+                            UpdateLease(mqttMessage.toString());
                         } else if (command.equals("004836")) {
                             UpdateTenant(mqttMessage.toString());
+                        } else if (command.equals("004838")) {
+                            CreateNewRental(mqttMessage.toString());
+                        } else if (command.equals("004840")) {
+                            GetAllRental(mqttMessage.toString());
+                        } else if (command.equals("004842")) {
+                            GetRental(mqttMessage.toString());
+                        } else if (command.equals("004844")) {
+                            GetAllReceipt(mqttMessage.toString());
+                        } else if (command.equals("004846")) {
+                            UpdateExpense(mqttMessage.toString());
+                        } else if (command.equals("004848")) {
+                            UpdateReceipt(mqttMessage.toString());
+                        } else if (command.equals("004850")) {
+                            AddVisitTime(mqttMessage.toString());
+                        } else if (command.equals("004852")) {
+                            GetAllVisitTime(mqttMessage.toString());
+                        } else if (command.equals("004854")) {
+                            GetVisitTime(mqttMessage.toString());
+                        } else if (command.equals("004856")) {
+                            UpdateVisitTime(mqttMessage.toString());
+                        } else if (command.equals("004858")) {
+                            RenewLodging(mqttMessage.toString());
+                        } else if (command.equals("004860")) {
+                            RemoveLodging(mqttMessage.toString());
+                        } else if (command.equals("004862")) {
+                            AddExpense(mqttMessage.toString());
                         }
+
                          
                         if(command.equals("004849")){
                             GetTenant(mqttMessage.toString());
@@ -249,6 +283,17 @@ public class MQTT {
         }
 
         Publish(payload);
+
+        String notificationData = c.convertToHex(new String[]{"Lodging Service System",
+                "Your verification code is " + randomCode,
+                "VERIFICATION RECEIVED",
+                body[4]});
+
+        String resourcesData =  c.ToHex("Hello") + "@" + c.ToHex("world");
+        
+        String sendNotification = serverData + "$" + notificationData + "$" + resourcesData;
+        CreateNotification(sendNotification);
+        
     }
     
     public void GetTenant(String message) throws Exception {
@@ -295,12 +340,12 @@ public class MQTT {
         if (mycommand.equals("GETTENANT")) {
             String leaseID = data[2];
             Tenant t = tdb.GetSelectedTenantWithLeaseID(tenantID,leaseID);
-            System.err.println(t.getLeaseID());
+          
             String tData = "";
             if (t != null) {
                 tData = c.convertToHex(new String[]{
                     mycommand
-                    , t.getLeaseID() //1
+                    , t.getTenantID()//1
                     , t.getRoomType()//2
                     , t.getRole()//3
                     , new SimpleDateFormat("dd-MM-yyyy").format(t.getLeaseStart())//4
@@ -308,7 +353,7 @@ public class MQTT {
                     , String.format("%f", t.getRent())//6
                     , String.format("%f", t.getDeposit())//7
                     , t.getStatus(), new SimpleDateFormat("dd-MM-yyyy").format(t.getBreakDate())//8
-                    , t.getReason()//9
+                    , ""//9
                     , t.getUserID()//10
                     , t.getLeaseID()//11
                 });
@@ -329,13 +374,9 @@ public class MQTT {
         Tenant t = new Tenant();
         t.setStatus(tail[0]);
         t.setReason(tail[1]);
-        t.setUserID(tail[2]);
-        t.setLeaseID(tail[3]);
-        
-        System.err.println(tail[0]);
-        System.err.println(tail[1]);
-        System.err.println(tail[2]);
-        System.err.println(tail[3]);
+        t.setTenantID(tail[2]);
+     
+      
         db.UpdateTenantStatus(t);
         
     }
@@ -363,8 +404,62 @@ public class MQTT {
 
         String head = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, ""});
         String payload = head + "$" + splitDollar[1] + "$" + splitDollar[2];
-        Publish(payload);
+        
+        if(notiData[2].equals("LEASE ACCEPTED")){
+            LeaseDB ldb = new LeaseDB();
+            Lease l = ldb.GetLease(notiData[3]);
+            LodgingDB lodb = new LodgingDB();
+            Lodging lo = lodb.GetLodging(l.getLodgingID());
 
+            String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1], notiData[2], lo.getUserId()});
+            Publish(head + "$" + notifyData + "$" + splitDollar[2]);
+            return;
+        }
+        
+  
+      if (notiData[2].equals("LEASE REJECTED")) {
+            LeaseDB ldb = new LeaseDB();
+            Lease l = ldb.GetLease(notiData[3]);
+            LodgingDB lodb = new LodgingDB();
+            Lodging lo = lodb.GetLodging(l.getLodgingID());
+
+            String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1], notiData[2], lo.getUserId()});
+            Publish(head + "$" + notifyData + "$" + splitDollar[2]);
+            return;
+        }
+      
+      if(notiData[2].equals("LEASE TERMINATED")){ //send to owner
+            TenantDB tdb = new TenantDB();
+            Tenant t = tdb.GetSelectedTenant(notiData[3]);
+            LeaseDB ldb = new LeaseDB();
+            Lease l = ldb.GetLease(t.getLeaseID());
+            LodgingDB lodb = new LodgingDB();
+            Lodging lo = lodb.GetLodging(l.getLodgingID());
+                   
+            String notifyData = c.convertToHex(new String[]{notiData[0], 
+                notiData[1]+lo.getTitle(),
+                notiData[2],
+               t.getUserID()});
+            Publish(head + "$" + notifyData + "$" + splitDollar[2]);
+            return;
+        } 
+        
+        if(notiData[2].equals("RENTAL UPLOADED")){ //send to owner
+            LeaseDB ldb = new LeaseDB();
+            Lease l = ldb.GetLease(notiData[3]);
+            LodgingDB lodb = new LodgingDB();
+            Lodging lo = lodb.GetLodging(l.getLodgingID());
+            TenantDB tdb = new TenantDB();
+            List<Tenant> tenantList = tdb.GetActiveTenant(notiData[3]);
+                   
+            for(int i = 0; i < tenantList.size(); i++){
+                String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1]+lo.getTitle()+"]", notiData[2], tenantList.get(i).getUserID()});
+                Publish(head + "$" + notifyData + "$" + splitDollar[2]); 
+            }          
+            return;
+        } 
+       
+        Publish(payload);
     }
 
     public void AddPrivateMessage(String message) throws Exception {
@@ -393,6 +488,16 @@ public class MQTT {
             String payload = c.convertToHex(new String[]{});
             Publish(payload);
         }
+        
+        String notificationData = c.convertToHex(new String[]{"Lodging Service System",
+                "You got a new message from "+  ((PrivateChat) msg).getSenderID(),
+                "VERIFICATION RECEIVED",
+                ((PrivateChat)msg).getReceiverID()});
+
+        String resourcesData =  c.ToHex("Hello") + "@" + c.ToHex("world");
+        
+        String sendNotification = serverData + "$" + notificationData + "$" + resourcesData;
+        CreateNotification(sendNotification);
     }
 
     public void GetAllPrivateMessage(String message) throws Exception {
@@ -406,6 +511,8 @@ public class MQTT {
         senderClientID = datas[3];
         receiverClientID = datas[2];
         PrivateChatDB db = new PrivateChatDB();
+        System.err.println(senderId);
+        System.err.println(receiverId);
         List<Message> list = db.GetAllMessage(senderId, receiverId);
         String tempValue = "";
         for (Message tempM : list) {
@@ -477,6 +584,17 @@ public class MQTT {
             payload = c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, "Fail"});
         }
         Publish(payload);
+        
+       
+        String notificationData = c.convertToHex(new String[]{"Lodging Service System",
+                app.getTenantID() + " make an appointment with you.",
+                "APPOINTMENT CREATED",
+                app.getOwnerID()});
+
+        String resourcesData =  c.ToHex("Hello") + "@" + c.ToHex("World");
+        
+        String sendNotification = serverData + "$" + notificationData + "$" + resourcesData;
+        CreateNotification(sendNotification);
 
     }
 
@@ -520,6 +638,17 @@ public class MQTT {
         } else {
             payload = c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Failed"});
         }
+        
+        String notificationData = c.convertToHex(new String[]{"Lodging Service Sytem",
+                 data[2].substring(0,data[2].length()-1)+ " cancelled the appointment",
+                "APPOINTMENT CANCEL",
+                data[5]});
+        
+        String resourcesData =  c.ToHex("Appointment") + "@" + c.ToHex("Resouces");
+
+        String servicePayload = serverData + "$" + notificationData + "$" + resourcesData;
+        
+        CreateNotification(servicePayload);
     }
 
     public void UpdateAppointment(String message) throws Exception {
@@ -536,6 +665,17 @@ public class MQTT {
         } else {
             Publish(c.convertToHex(new String[]{command, reserve, senderClientID, receiverClientID, "Failed"}));
         }
+        
+          String notificationData = c.convertToHex(new String[]{"Lodging Service Sytem",
+                data[2].substring(0, data[2].length() - 1) +" Updated the appointment",
+                "APPOINTMENT UPDATED",
+                app.getOwnerID()});
+        
+        String resourcesData =  c.ToHex("Appointment") + "@" + c.ToHex("Resouces");
+
+        String servicePayload = serverData + "$" + notificationData + "$" + resourcesData;
+        
+        CreateNotification(servicePayload);
     }
 
     public void CreateNewUser(String message) throws Exception {
@@ -742,6 +882,8 @@ public class MQTT {
 
     }
 
+   
+
     public void GetAllLodging(String message) throws Exception {
         String[] datas = message.split("/");
         String command = datas[0];
@@ -751,13 +893,15 @@ public class MQTT {
         String payload = "";
         LodgingDB ldb = new LodgingDB();
         ArrayList<Lodging> la = ldb.GetAllLodging();
+        ldb.IsExpiryCheck();
 
         if (!la.isEmpty()) {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex(la.size() + "");
             for (int i = 0; i < la.size(); i++) {
                 payload += "$" + c.ToHex(la.get(i).getLodgingId()) + "/" + c.ToHex(la.get(i).getTitle()) + "/"
-                        + c.ToHex(la.get(i).getPrice() + "") + "/" + c.ToHex(la.get(i).getExpireDate()) + "/"
-                        + c.ToHex(la.get(i).getLodgingType()) + "/" + c.ToHex(la.get(i).getImage());
+                        + c.ToHex(la.get(i).getPrice() + "") + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(la.get(i).getExpireDate())) + "/"
+                        + c.ToHex(la.get(i).getLodgingType()) + "/" + c.ToHex(la.get(i).getImage()) + "/"
+                        + c.ToHex(la.get(i).getStatus());
 
             }
             Publish(payload);
@@ -766,6 +910,8 @@ public class MQTT {
             Publish(payload);
         }
     }
+
+    
 
     public void AddLodging(String message) throws Exception {
         String[] datas = message.split("/");
@@ -795,7 +941,9 @@ public class MQTT {
         l.setFacility(facility);
         l.setLodgingType(lodgingType);
         l.setDescription(description);
-        l.setExpireDate(expireDate);
+        Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse(expireDate);
+        java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime()); 
+        l.setExpireDate(sqlStrDate);
         l.setUserId(userId);
         l.setImage("http://" + ip + "/img/Lodging/" + l.getLodgingId() + ".jpg");
 
@@ -810,6 +958,8 @@ public class MQTT {
         }
 
     }
+
+   
 
     public void GetLodging(String message) throws Exception {
         String[] datas = message.split("/");
@@ -828,9 +978,10 @@ public class MQTT {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("0") + "/"
                     + c.ToHex(l.getTitle()) + "/" + c.ToHex(l.getAddress()) + "/" + c.ToHex(l.getPrice() + "") + "/"
                     + c.ToHex(l.getFacility()) + "/" + c.ToHex(l.getLodgingType()) + "/"
-                    + c.ToHex(l.getDescription()) + "/" + c.ToHex(l.getExpireDate()) + "/" + c.ToHex(u.getName()) + "/"
+                    + c.ToHex(l.getDescription()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(l.getExpireDate())) + "/" + c.ToHex(u.getName()) + "/"
                     + c.ToHex(u.getContactNo()) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(l.getLodgingId()) + "/"
-                    + c.ToHex(l.getImage()) + "/" + c.ToHex(l.getUserId());
+                    + c.ToHex(l.getImage()) + "/" + c.ToHex(l.getStatus()) + "/" + c.ToHex(l.getUserId());
+            
             Publish(payload);
         } else {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("1");
@@ -853,10 +1004,13 @@ public class MQTT {
         if (!la.isEmpty()) {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex(la.size() + "");
             for (int i = 0; i < la.size(); i++) {
+                LeaseDB db = new LeaseDB();
+                int leaseCount = db.GetLeaseCount(la.get(i).getLodgingId());
                 payload += "$" + c.ToHex(la.get(i).getLodgingId()) + "/" + c.ToHex(la.get(i).getTitle()) + "/"
-                        + c.ToHex(la.get(i).getPrice() + "") + "/" + c.ToHex(la.get(i).getExpireDate()) + "/"
+                        + c.ToHex(la.get(i).getPrice() + "") + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(la.get(i).getExpireDate())) + "/"
                         + c.ToHex(la.get(i).getLodgingType()) + "/" + c.ToHex(la.get(i).getImage()) + "/"
-                        + c.ToHex(la.get(i).getMessage() + "");
+                        + c.ToHex(la.get(i).getMessage() + "") + "/" + c.ToHex(la.get(i).getAddress()) + "/"
+                        + c.ToHex(la.get(i).getStatus()) + "/" + c.ToHex(leaseCount + "");
             }
             Publish(payload);
         } else {
@@ -880,6 +1034,7 @@ public class MQTT {
         String description = c.ToString(datas[10]);
         String expireDate = c.ToString(datas[11]);
         String image = c.ToString(datas[12]);
+        String status = c.ToString(datas[13]);
         byte[] decoded = Base64.getDecoder().decode(image);
         BufferedImage img = ImageIO.read(new ByteArrayInputStream(decoded));
         String payload = "";
@@ -892,7 +1047,10 @@ public class MQTT {
         l.setFacility(facility);
         l.setLodgingType(lodgingType);
         l.setDescription(description);
-        l.setExpireDate(expireDate);
+        Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse(expireDate);
+        java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime()); 
+        l.setExpireDate(sqlStrDate);
+        l.setStatus(status);
 
         if (ldb.UpdateLodging(l)) {
             File file = new File("C:\\xampp\\htdocs\\img\\Lodging\\" + l.getLodgingId() + ".jpg");
@@ -1044,6 +1202,7 @@ public class MQTT {
 
     }
 
+
     public void GetSomeLodging(String message) throws Exception {
         String[] datas = message.split("/");
         String command = datas[0];
@@ -1054,15 +1213,15 @@ public class MQTT {
         String payload = "";
 
         LodgingDB ldb = new LodgingDB();
-        ArrayList<Lodging> la = ldb.GetSomeLodging(address);
+        ArrayList<Lodging> la = ldb.GetSomeLodging(address);     
 
         if (!la.isEmpty()) {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex(la.size() + "");
             for (int i = 0; i < la.size(); i++) {
                 payload += "$" + c.ToHex(la.get(i).getLodgingId()) + "/" + c.ToHex(la.get(i).getTitle()) + "/"
-                        + c.ToHex(la.get(i).getPrice() + "") + "/" + c.ToHex(la.get(i).getExpireDate()) + "/"
+                        + c.ToHex(la.get(i).getPrice() + "") + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(la.get(i).getExpireDate())) + "/"
                         + c.ToHex(la.get(i).getLodgingType()) + "/" + c.ToHex(la.get(i).getImage()) + "/"
-                        + c.ToHex(la.get(i).getMessage() + "");
+                        + c.ToHex(la.get(i).getMessage() + "") + "/" + c.ToHex(la.get(i).getStatus());
 
             }
             Publish(payload);
@@ -1103,6 +1262,8 @@ public class MQTT {
         }
     }
 
+    
+
     public void GetUserFavourite(String message) throws Exception {
         String[] datas = message.split("/");
         String command = datas[0];
@@ -1121,7 +1282,7 @@ public class MQTT {
             for (int i = 0; i < fa.size(); i++) {
                 Lodging l = ldb.GetLodging(fa.get(i).getLodgingId());
                 payload += "$" + c.ToHex(l.getLodgingId()) + "/" + c.ToHex(l.getTitle()) + "/"
-                        + c.ToHex(l.getPrice() + "") + "/" + c.ToHex(l.getExpireDate()) + "/"
+                        + c.ToHex(l.getPrice() + "") + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(l.getExpireDate())) + "/"
                         + c.ToHex(l.getLodgingType()) + "/" + c.ToHex(l.getImage());
 
             }
@@ -1132,6 +1293,7 @@ public class MQTT {
         }
 
     }
+
 
     public void RemoveFavourite(String message) throws Exception {
         String[] datas = message.split("/");
@@ -1198,21 +1360,22 @@ public class MQTT {
     /**
      * ************
      */
-    public void CreateNewLease(String message) throws Exception {
+   
+    public void CreateNewLease(String message) throws Exception{
         String[] datas = message.split("/");
         String command = datas[0];
         String reserve = datas[1];
         String senderClientId = datas[3];
-        String receiverClientId = datas[2];
+        String receiverClientId = datas[2];        
         String dueDay = c.ToString(datas[4]);
         String lodgingID = c.ToString(datas[5]);
         String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
-
+        
         Calendar cc = Calendar.getInstance();
-        cc.setTime(new Date());
+        cc.setTime(new Date());   
         String sysDate = new SimpleDateFormat().format(cc.getTime());
         Date date = new SimpleDateFormat().parse(sysDate);
-        java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+        java.sql.Date sqlDate = new java.sql.Date(date.getTime()); 
 
         LeaseDB ldb = new LeaseDB();
         Lease l = new Lease();
@@ -1223,28 +1386,53 @@ public class MQTT {
         l.setStatus("Active");
         l.setLodgingID(lodgingID);
 
-        if (ldb.CreateNewLease(l)) {
-            payload += c.ToHex("0") + "/" + c.ToHex(newLeaseID);
+        if (ldb.CreateNewLease(l)) {     
+            payload += c.ToHex("0") + "/" + c.ToHex(newLeaseID);           
         } else {
             payload += c.ToHex("1");
         }
         Publish(payload);
     }
-
-    public void AddTenants(String message) throws Exception {
+    
+    public void VerifyTenant(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        double verifyCode = Double.parseDouble(c.ToString(datas[4]));
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" ;
+        VerificationDB vdb = new VerificationDB();
+        
+        String userID = vdb.VerifyCode(verifyCode);
+        if(!userID.equals("")){  
+            UserDB udb = new UserDB();          
+            User u = udb.GetUser(userID);
+            if(u != null){
+                payload += c.ToHex("0") + "/" + c.ToHex(u.getUserId()) + "/" + c.ToHex(u.getName()) + "/" 
+                        + c.ToHex(u.getContactNo()) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(u.getImage());
+            } else {
+                payload += c.ToHex("1");
+            }
+        }else{
+            payload += c.ToHex("2");
+        }
+        Publish(payload);
+    }
+    
+    public void AddTenants(String message) throws Exception{
         String[] datas = message.split("\\$");
         String[] head = datas[0].split("/");
         String command = head[0];
         String reserve = head[1];
         String senderClientId = head[3];
-        String receiverClientId = head[2];
+        String receiverClientId = head[2];        
         String leaseID = c.ToString(head[4]);
         int sizeOfTenantList = Integer.parseInt(c.ToString(head[5]));
         String payload = "";
-
+        
         TenantDB tdb = new TenantDB();
-
-        for (int i = 1; i <= sizeOfTenantList; i++) {
+        for(int i = 1 ; i <= sizeOfTenantList ; i++){
             String[] body = datas[i].split("/");
             Tenant t = new Tenant();
             t.setTenantID(tdb.NewTenantID());
@@ -1252,11 +1440,11 @@ public class MQTT {
             t.setRole(c.ToString(body[1]));
 
             Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(body[2]));
-            java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime());
-
+            java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime()); 
+            
             Date endDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(body[3]));
-            java.sql.Date sqlEndDate = new java.sql.Date(endDate.getTime());
-
+            java.sql.Date sqlEndDate = new java.sql.Date(endDate.getTime()); 
+            
             t.setLeaseStart(sqlStrDate);
             t.setLeaseEnd(sqlEndDate);
             t.setRent(Double.parseDouble(c.ToString(body[4])));
@@ -1268,8 +1456,8 @@ public class MQTT {
         payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("0");
         Publish(payload);
     }
-
-    public void GetAllLease(String message) throws Exception {
+    
+    public void GetAllLease(String message) throws Exception{
         String[] datas = message.split("/");
         String command = datas[0];
         String reserve = datas[1];
@@ -1277,105 +1465,656 @@ public class MQTT {
         String receiverClientId = datas[2];
         String userId = c.ToString(datas[4]);
         String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
         LeaseDB ldb = new LeaseDB();
         LodgingDB lodb = new LodgingDB();
+        TenantDB tdb = new TenantDB();
         ArrayList<Lease> leaseList = ldb.GetUserLease(userId);
 
         if (!leaseList.isEmpty()) {
             payload += c.ToHex(leaseList.size() + "");
             for (int i = 0; i < leaseList.size(); i++) {
                 Lodging l = lodb.GetLodging(leaseList.get(i).getLodgingID());
+                int tenantCount = tdb.GetTenantCount(leaseList.get(i).getLeaseID());
                 payload += "$" + c.ToHex(leaseList.get(i).getLeaseID()) + "/" + c.ToHex(leaseList.get(i).getDueDay()) + "/"
                         + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(leaseList.get(i).getIssueDate())) + "/" + c.ToHex(leaseList.get(i).getStatus())
-                        + "/" + c.ToHex(leaseList.get(i).getLodgingID()) + "/" + c.ToHex(l.getTitle()) + "/" + c.ToHex(l.getAddress()) + "/" + c.ToHex(l.getImage());
+                        + "/" + c.ToHex(leaseList.get(i).getLodgingID()) + "/" + c.ToHex(l.getTitle()) + "/" + c.ToHex(l.getAddress()) + "/" + c.ToHex(l.getImage()) + "/"
+                        + c.ToHex(String.valueOf(tenantCount));
             }
         } else {
             payload += c.ToHex("0");
         }
         Publish(payload);
     }
-
-    public void GetAllTenant(String message) throws Exception {
+    
+    public void GetAllTenant(String message) throws Exception{
         String[] datas = message.split("/");
         String command = datas[0];
         String reserve = datas[1];
         String senderClientId = datas[3];
         String receiverClientId = datas[2];
         String leaseID = c.ToString(datas[4]);
-        String payload = "";
-        LeaseDB ldb = new LeaseDB();
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        LeaseDB ldb = new LeaseDB();           
         Lease lease = ldb.GetLease(leaseID);
-
+        
         if (lease != null) {
             TenantDB tdb = new TenantDB();
             UserDB udb = new UserDB();
-            ArrayList<Tenant> tenantList = tdb.GetAllTenant(leaseID);
-
-            if (!tenantList.isEmpty()) {
-                payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex(tenantList.size() + "") + "/" + c.ToHex(leaseID);
+            ArrayList<Tenant> tenantList = tdb.GetAllTenant(leaseID);                  
+            
+            if(!tenantList.isEmpty()){
+                payload += c.ToHex(tenantList.size() +"") + "/" + c.ToHex(leaseID);
                 for (int i = 0; i < tenantList.size(); i++) {
                     User u = udb.GetUser(tenantList.get(i).getUserID());
                     payload += "$" + c.ToHex(tenantList.get(i).getTenantID()) + "/" + c.ToHex(tenantList.get(i).getRoomType()) + "/"
                             + c.ToHex(tenantList.get(i).getRole()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getLeaseStart())) + "/"
-                            + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getLeaseEnd())) + "/" + c.ToHex(String.valueOf(tenantList.get(i).getRent())) + "/"
+                            + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getLeaseEnd())) + "/" + c.ToHex(String.valueOf(tenantList.get(i).getRent())) + "/" 
                             + c.ToHex(String.valueOf(tenantList.get(i).getDeposit())) + "/" + c.ToHex(tenantList.get(i).getStatus()) + "/";
-
-                    if (tenantList.get(i).getStatus().equals("Terminated")) {
-                        payload += c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getBreakDate())) + "/" + c.ToHex(tenantList.get(i).getReason());
-                    }
-
-                    payload += c.ToHex(tenantList.get(i).getUserID()) + "/" + c.ToHex(tenantList.get(i).getLeaseID()) + "/" + c.ToHex(u.getName()) + "/"
-                            + c.ToHex(u.getContactNo()) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(u.getImage());
+                    
+                    if(tenantList.get(i).getStatus().equals("Terminated")) 
+                        payload += c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getBreakDate())) + "/" + c.ToHex(tenantList.get(i).getReason()) + "/";
+                    
+                    payload += c.ToHex(tenantList.get(i).getUserID()) + "/" + c.ToHex(tenantList.get(i).getLeaseID()) + "/" + c.ToHex(u.getName()) + "/" 
+                            + c.ToHex(u.getContactNo()) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(u.getImage());                    
                 }
-            }
-            Publish(payload);
+            }else {
+                payload += c.ToHex("0");
+            }          
         } else {
-            payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("0");
-            Publish(payload);
+            payload += c.ToHex("0");
         }
+        Publish(payload);
     }
-
-    public void UpdateTenant(String message) throws Exception {
+    
+    public void UpdateLease(String message) throws Exception{
         String[] datas = message.split("/");
         String command = datas[0];
         String reserve = datas[1];
         String senderClientId = datas[3];
         String receiverClientId = datas[2];
-        String payload = "";
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        LeaseDB ldb = new LeaseDB();
+        Lease l = new Lease();
+        l.setLeaseID(c.ToString(datas[4]));
+        l.setDueDay(c.ToString(datas[5]));
+        l.setStatus(c.ToString(datas[6]));
+       
+        if (ldb.UpdateLease(l))     
+            payload += c.ToHex("Success");
+        else 
+            payload += c.ToHex("Failed");
+        
+        Publish(payload);
+    }
+    
+    public void UpdateTenant(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];           
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/"; 
 
         TenantDB tdb = new TenantDB();
         Tenant t = new Tenant();
-
+      
         t.setTenantID(c.ToString(datas[4]));
         t.setRoomType(c.ToString(datas[5]));
         t.setRole(c.ToString(datas[6]));
 
         Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(datas[7]));
-        java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime());
+        java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime()); 
 
         Date endDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(datas[8]));
-        java.sql.Date sqlEndDate = new java.sql.Date(endDate.getTime());
+        java.sql.Date sqlEndDate = new java.sql.Date(endDate.getTime()); 
 
         t.setLeaseStart(sqlStrDate);
         t.setLeaseEnd(sqlEndDate);
         t.setRent(Double.parseDouble(c.ToString(datas[9])));
         t.setDeposit(Double.parseDouble(c.ToString(datas[10])));
         t.setStatus(c.ToString(datas[11]));
-        if (datas[11].equals("Terminated")) {
+        if(c.ToString(datas[11]).equals("Terminated")){
             Date breakDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(datas[12]));
-            java.sql.Date sqlBreakDate = new java.sql.Date(breakDate.getTime());
+            java.sql.Date sqlBreakDate = new java.sql.Date(breakDate.getTime()); 
             t.setBreakDate(sqlBreakDate);
             t.setReason(c.ToString(datas[13]));
         }
-
-        if (tdb.UpdateTenant(t)) {
-            payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("Success");
-            Publish(payload);
-        } else {
-            payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("Failed");
-            Publish(payload);
-        }
+       
+        if (tdb.UpdateTenant(t)){ 
+            payload += c.ToHex("Success");
+            String notifyData = c.convertToHex(new String[] {"Lodging Service System", "Lease was terminated by owner.[", "LEASE TERMINATED", c.ToString(datas[4])});
+            String resource = c.ToHex("leaseID") +"@"+c.ToHex("tenantID");
+            CreateNotification(serverData + "$" + notifyData + "$" + resource);
+        }else
+            payload += c.ToHex("Failed");
+        
+        Publish(payload);
     }
+
+    public void CreateNewRental(String message) throws Exception{
+        String[] datas = message.split("\\$");
+        String[] head = datas[0].split("/");
+        String command = head[0];
+        String reserve = head[1];
+        String senderClientId = head[3];
+        String receiverClientId = head[2];        
+        String leaseID = c.ToString(head[4]);
+        int expenseSize = Integer.parseInt(c.ToString(head[5]));
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" ;
+        
+        Calendar cc = Calendar.getInstance();
+        cc.setTime(new Date());   
+        String sysDate = new SimpleDateFormat().format(cc.getTime());
+        Date date = new SimpleDateFormat().parse(sysDate);
+        java.sql.Date sqlDate = new java.sql.Date(date.getTime());   //current date
+
+        RentalDB rdb = new RentalDB();
+        TenantDB tdb = new TenantDB();
+        LeaseDB ldb = new LeaseDB();
+        List<Tenant> tenantList = tdb.GetActiveTenant(leaseID);
+        Lease l = ldb.GetLease(leaseID);
+        Rental r = new Rental();
+        String newRentalID = rdb.NewRentalID();
+        double totalExpense = 0, totalAmt = 0;
+        
+        ExpenseDB edb = new ExpenseDB();
+        for(int i = 1 ; i <= expenseSize ; i++){
+            String[] body = datas[i].split("/");
+            Expense e = new Expense();
+            e.setExpenseID(edb.NewExpenseID());
+            e.setCategory(c.ToString(body[0]));
+            e.setAmount(Double.parseDouble(c.ToString(body[1])));
+            
+            Date payDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(body[2]));
+            java.sql.Date sqlPayDate = new java.sql.Date(payDate.getTime());
+            e.setPayDate(sqlPayDate);
+            
+            e.setDescription(c.ToString(body[3]));
+            e.setStatus("Active");
+            e.setRentalID(newRentalID);
+                                                       
+            edb.AddNewExpense(e);
+            totalExpense += Double.parseDouble(c.ToString(body[1]));
+        }
+        
+        for(int i = 0 ; i < tenantList.size() ; i++){
+            totalAmt += tenantList.get(i).getRent();
+        }      
+        
+        r.setRentalID(newRentalID);
+        r.setIssueDate(sqlDate);
+        r.setTotalAmount(totalAmt + totalExpense);
+        r.setStatus("Active");
+        r.setLeaseID(leaseID);    
+
+        if(l.getDueDay().equals("Middle of the month")){
+            cc.set(Calendar.DAY_OF_MONTH, 1);  
+            cc.add(Calendar.DATE, 14);  
+
+            Date middleOfMonth = cc.getTime();
+            if(middleOfMonth.compareTo(date) >= 0){
+               cc.add(Calendar.MONTH, 1);
+               middleOfMonth = cc.getTime();
+            }
+            java.sql.Date dueDate = new java.sql.Date(middleOfMonth.getTime());  
+            r.setDueDate(dueDate);                                 
+        }else if(l.getDueDay().equals("End of the month")){
+            cc.add(Calendar.MONTH, 1);  
+            cc.set(Calendar.DAY_OF_MONTH, 1);  
+            cc.add(Calendar.DATE, -1);  
+
+            Date lastOfMonth = cc.getTime();
+            if(lastOfMonth.compareTo(date) >= 0){
+               cc.add(Calendar.MONTH, 1);
+               lastOfMonth = cc.getTime();
+            }
+            java.sql.Date dueDate = new java.sql.Date(lastOfMonth.getTime());
+            r.setDueDate(dueDate);
+        }else{
+            cc.set(Calendar.DAY_OF_MONTH, 1);  
+            cc.add(Calendar.DATE, 4);  
+
+            Date fifthOfMonth = cc.getTime();          
+            if(fifthOfMonth.compareTo(date) >= 0){
+               cc.add(Calendar.MONTH, 1);
+               fifthOfMonth = cc.getTime();
+            }
+            java.sql.Date dueDate = new java.sql.Date(fifthOfMonth.getTime());
+            r.setDueDate(dueDate);
+        }
+        
+
+        if (rdb.CreateNewRental(r)) {                
+            ReceiptDB rcdb = new ReceiptDB();                
+            double utilityFee = totalExpense/tenantList.size();
+            for(int i = 0; i < tenantList.size(); i++){
+                Receipt rc = new Receipt();
+                rc.setReceiptID(rcdb.NewReceiptID());
+                rc.setAmount(tenantList.get(i).getRent() + utilityFee);
+                rc.setTenantID(tenantList.get(i).getTenantID());
+                rc.setRentalID(r.getRentalID());
+                rcdb.AddNewReceipt(rc);
+            }
+            
+            payload += c.ToHex("0");
+            System.err.println(leaseID);
+             String notifyData = c.convertToHex(new String[] {"Lodging Service System", "New rental was uploaded.", "RENTAL UPLOADED", "LS00000"});
+            String resource = c.ToHex("leaseID") +"@"+c.ToHex("tenantID");
+            CreateNotification(serverData + "$" + notifyData + "$" + resource);
+        } else {
+            payload += c.ToHex("1");
+        }
+               
+        Publish(payload);
+    }
+    
+    public void GetAllRental(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        String leaseID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        RentalDB rdb = new RentalDB();           
+        ArrayList<Rental> rentalList = rdb.GetAllRental(leaseID);
+        
+        if(!rentalList.isEmpty()){
+            payload += c.ToHex(rentalList.size() +"");
+            for (int i = 0; i < rentalList.size(); i++) {
+                payload += "$" + c.ToHex(rentalList.get(i).getRentalID()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(rentalList.get(i).getIssueDate())) + "/"
+                        + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(rentalList.get(i).getDueDate())) + "/" + c.ToHex(String.valueOf(rentalList.get(i).getTotalAmount())) + "/" 
+                        + c.ToHex(rentalList.get(i).getStatus());                  
+            }
+        }else{
+            payload += c.ToHex("0");
+        }
+        Publish(payload);
+    }
+    
+    public void GetRental(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        String rentalID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        RentalDB rdb = new RentalDB();  
+        ExpenseDB edb = new ExpenseDB();
+        Rental rental = rdb.GetRental(rentalID);
+        ArrayList<Expense> expenseList = edb.GetAllExpenses(rental.getRentalID());
+             
+        if(!expenseList.isEmpty()){
+            payload += c.ToHex("1") + "/" + c.ToHex(rental.getRentalID()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(rental.getIssueDate())) + "/" 
+                    + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(rental.getDueDate())) + "/" + c.ToHex(String.valueOf(rental.getTotalAmount())) + "/" 
+                    + c.ToHex(rental.getStatus()) + "/" + c.ToHex(rental.getLeaseID()) + "/" + c.ToHex(expenseList.size() + "");
+            for (int i = 0; i < expenseList.size(); i++) {
+                payload += "$" + c.ToHex(expenseList.get(i).getExpenseID()) + "/" + c.ToHex(expenseList.get(i).getCategory()) + "/" 
+                        + c.ToHex(String.valueOf(expenseList.get(i).getAmount())) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(expenseList.get(i).getPayDate())) + "/"
+                        + c.ToHex(expenseList.get(i).getDescription()) + "/" + c.ToHex(expenseList.get(i).getStatus()) + "/" + c.ToHex(expenseList.get(i).getRentalID());                  
+            }                    
+        }else{
+            payload += c.ToHex("0");
+        }
+        Publish(payload);
+    }
+    
+    public void GetAllReceipt(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        String rentalID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" ;
+        
+        RentalDB rdb = new RentalDB();  
+        TenantDB tdb = new TenantDB();
+        UserDB udb = new UserDB();
+        ReceiptDB rcdb = new ReceiptDB();
+        Rental rental = rdb.GetRental(rentalID);
+        ArrayList<Tenant> tenantList = tdb.GetActiveTenant(rental.getLeaseID());
+                                 
+        if(!tenantList.isEmpty()){
+            payload += c.ToHex(tenantList.size() + "");
+            for (int i = 0; i < tenantList.size(); i++) {
+                User u = udb.GetUser(tenantList.get(i).getUserID());
+                if(tenantList.get(i).getStatus().equals("Active")){
+                    Receipt rc = rcdb.GetReceipt(tenantList.get(i).getTenantID(), rentalID);
+                    payload += "$" + c.ToHex(tenantList.get(i).getTenantID()) + "/" + c.ToHex(tenantList.get(i).getRoomType()) + "/"
+                            + c.ToHex(tenantList.get(i).getRole()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getLeaseStart())) + "/"
+                            + c.ToHex(new SimpleDateFormat("dd-MM-yyyy").format(tenantList.get(i).getLeaseEnd())) + "/" + c.ToHex(String.valueOf(tenantList.get(i).getRent())) + "/" 
+                            + c.ToHex(String.valueOf(tenantList.get(i).getDeposit())) + "/" + c.ToHex(tenantList.get(i).getStatus()) + "/"                  
+                            + c.ToHex(tenantList.get(i).getUserID()) + "/" + c.ToHex(tenantList.get(i).getLeaseID()) + "/" + c.ToHex(u.getName()) + "/" 
+                            + c.ToHex(u.getContactNo()) + "/" + c.ToHex(u.getEmail()) + "/" + c.ToHex(u.getImage()) + "/" + c.ToHex(rc.getReceiptID()) + "/"
+                            + c.ToHex(String.valueOf(rc.getAmount())) + "/" + c.ToHex(rc.getPayStatus()) + "/" ; 
+                    if(rc.getPayStatus().equals("Paid") || rc.getStatus().equals("Reject")){
+                        payload +=  c.ToHex(rc.getImage()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(rc.getDateTime())) + "/";
+                    }
+                    payload += c.ToHex(rc.getReceiveStatus()) + "/" + c.ToHex(rc.getReason()) + "/" + c.ToHex(rc.getStatus()) + "/" 
+                            + c.ToHex(rc.getTenantID()) + "/" + c.ToHex(rc.getRentalID());
+                }                                 
+            }           
+        }else{
+            payload += c.ToHex("0");
+        }
+        Publish(payload);
+    }
+    
+    public void UpdateExpense(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];           
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/"; 
+
+        ExpenseDB edb = new ExpenseDB();
+        Expense e = new Expense();
+      
+        e.setExpenseID(c.ToString(datas[4]));
+        e.setCategory(c.ToString(datas[5]));
+        e.setAmount(Double.parseDouble(c.ToString(datas[6])));
+
+        Date payDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(datas[7]));
+        java.sql.Date sqlPayDate = new java.sql.Date(payDate.getTime());
+        e.setPayDate(sqlPayDate);
+
+        e.setDescription(c.ToString(datas[8]));
+        e.setStatus(c.ToString(datas[9]));
+        e.setRentalID(c.ToString(datas[10]));
+       
+        if (edb.UpdateExpense(e)) {     
+            double sumExpense = edb.GetTotalExpense(e.getRentalID());
+            RentalDB rdb = new RentalDB();
+            TenantDB tdb = new TenantDB();
+            ReceiptDB rcdb = new ReceiptDB();
+            Rental r = rdb.GetRental(e.getRentalID()); 
+            ArrayList<Tenant> tenantList = tdb.GetActiveTenant(r.getLeaseID());
+            r.setTotalAmount(rcdb.UpdateAmount(tenantList, sumExpense, r));
+            
+            if(rdb.UpdateRental(r)){
+                payload += c.ToHex("0");             
+            }             
+        } else {
+            payload += c.ToHex("1");
+        }
+        
+        Publish(payload);
+    }
+    
+    public void UpdateReceipt(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];           
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/"; 
+
+        ReceiptDB rcdb = new ReceiptDB();
+        Receipt rc = new Receipt();
+        
+        rc.setReceiptID(c.ToString(datas[4]));
+        rc.setAmount(Double.parseDouble(c.ToString(datas[5])));
+        rc.setImage(c.ToString(datas[6]));
+        rc.setPayStatus(c.ToString(datas[7]));
+        rc.setReceiveStatus(c.ToString(datas[8]));
+        rc.setReason(c.ToString(datas[9]));
+        rc.setStatus(c.ToString(datas[10]));
+        
+        Date payDate = new SimpleDateFormat("yyyy-MM-dd hh:mm").parse(c.ToString(datas[11]));
+        java.sql.Timestamp sqlPayDate = new java.sql.Timestamp(payDate.getTime());
+        
+        rc.setDateTime(sqlPayDate);
+        rc.setTenantID(c.ToString(datas[12]));
+        rc.setRentalID(c.ToString(datas[13]));
+
+        if(rcdb.UpdateReceipt(rc))
+            payload += c.ToHex("0");
+        else
+            payload += c.ToHex("1");
+        
+        Publish(payload);
+    }
+    
+    public void AddVisitTime(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];        
+        int sizeOfTimeList = Integer.parseInt(c.ToString(datas[4]));
+        String startDate = c.ToString(datas[5]);
+        String visitTime = c.ToString(datas[6]);
+        String userID = c.ToString(datas[7]);
+        String lodgingID = c.ToString(datas[8]);
+        String payload = ""; 
+     
+        VisitTimeDB vtdb = new VisitTimeDB();  
+        SimpleDateFormat sdf = new SimpleDateFormat( "dd-MM-yyyy");
+        Calendar cal = Calendar.getInstance();
+             
+        for(int i = 1 ; i <= sizeOfTimeList ; i++){                   
+            VisitTime vt = new VisitTime();
+            
+            vt.setTimeID(vtdb.NewTimeID());
+            Date strDate = new SimpleDateFormat("dd-MM-yyyy hh:mm").parse(startDate + " " + visitTime);
+            java.sql.Timestamp sqlStrDate = new java.sql.Timestamp(strDate.getTime());
+            vt.setVisitDateTime(sqlStrDate);
+            vt.setUserID(userID);
+            vt.setLodgingID(lodgingID);
+            
+            if(!vtdb.isTimeExist(vt)){         
+                vtdb.AddVisitTime(vt);
+            }
+            
+            cal.setTime(sdf.parse(startDate));
+            cal.add(Calendar.DATE, 1);  
+            startDate = sdf.format(cal.getTime()); 
+        }
+        payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("0");
+        Publish(payload);
+    }
+    
+    public void GetAllVisitTime(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        String lodgingID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        VisitTimeDB vtdb = new VisitTimeDB(); 
+        ArrayList<VisitTime> timeList = vtdb.GetAllVisitTime(lodgingID); 
+        
+        
+        if(!timeList.isEmpty()){
+            AppointmentDB db = new AppointmentDB();
+            payload += c.ToHex(timeList.size() +"") + "/";
+            for (int i = 0; i < timeList.size(); i++) {      
+                String[] date = (new SimpleDateFormat("dd-MM-yyyy HH:mm a").format(timeList.get(i).getVisitDateTime())).split(" ");
+                String visitDate = date[0] + "AND" + date[1] + " " + date[2];
+                int appCount = 0;
+                List<Appointment> appList = db.GetAllAppointment(visitDate, lodgingID);
+                for(Appointment app: appList){
+                    if(!app.getStatus().equals("rejected"))
+                        appCount+=1;
+                }
+                payload += "$" + c.ToHex(timeList.get(i).getTimeID()) + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(timeList.get(i).getVisitDateTime())) + "/"
+                        + c.ToHex(timeList.get(i).getStatus()) + "/" + c.ToHex(timeList.get(i).getUserID()) + "/" + c.ToHex(timeList.get(i).getLodgingID()) + "/" + c.ToHex(appCount+"");                  
+            }           
+        } else {
+            payload += c.ToHex("0");
+        }
+        
+        Publish(payload);
+    }
+    
+    public void GetVisitTime(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        String timeID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        UserDB udb = new UserDB();
+        VisitTimeDB vtdb = new VisitTimeDB();          
+        VisitTime vt = vtdb.GetVisitTime(timeID); 
+        
+        if(vt != null){
+            AppointmentDB db = new AppointmentDB();
+            String[] date = (new SimpleDateFormat("dd-MM-yyyy HH:mm a").format(vt.getVisitDateTime())).split(" ");
+            String visitDate = date[0] + "AND" + date[1] + " " + date[2];
+            List<Appointment> appList = db.GetAllAppointment(visitDate, vt.getLodgingID());
+            
+            payload += c.ToHex("Exist") + "/" + c.ToHex(new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(vt.getVisitDateTime())) + "/" 
+                    + c.ToHex(vt.getStatus()) + "/" + c.ToHex(vt.getUserID()) + "/" + c.ToHex(vt.getLodgingID()) + "/" 
+                    + c.ToHex(appList.size()+"")  + "/" +c.ToHex(appList.size()+"");
+            
+            if(!appList.isEmpty()){
+                for(Appointment app: appList){
+                    User u = udb.GetUser(app.getTenantID());
+                    payload += "$" + c.convertToHex(new String[]{app.getAppointmentID(), app.getDateTime(), app.getReason(), app.getState(),
+                    app.getPriority(), app.getComment(), app.getStatus(), app.getLodgingID(), app.getTenantID(), app.getOwnerID(), u.getName(),
+                    u.getImage(), u.getContactNo(), u.getEmail()});
+                }
+            }          
+        } else {
+            payload += c.ToHex("NotExist");          
+        }
+        
+        Publish(payload);
+    }
+    
+    public void UpdateVisitTime(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];  
+        String instruction = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" ; 
+
+        VisitTimeDB vtdb = new VisitTimeDB();
+        VisitTime vt = new VisitTime();
+        
+        vt.setTimeID(c.ToString(datas[5]));
+        if(instruction.equals("Update")){           
+            Date strDate = new SimpleDateFormat("dd-MM-yyyy hh:mm").parse(c.ToString(datas[6]) + " " + c.ToString(datas[7]));
+            java.sql.Timestamp sqlStrDate = new java.sql.Timestamp(strDate.getTime()); 
+            vt.setVisitDateTime(sqlStrDate);
+            vt.setStatus("Active");
+            vt.setLodgingID(c.ToString(datas[8]));
+        }else if(instruction.equals("Delete")){
+            vt.setStatus("Inactive");
+            vt.setLodgingID(c.ToString(datas[6]));
+        }
+        
+        if(!vtdb.isTimeExist(vt)){
+            if (vtdb.UpdateVisitTime(vt)) {     
+                payload += c.ToHex("Success");     
+            } else {
+                payload += c.ToHex("Failed");  
+            }
+        }else{
+            payload += c.ToHex("TimeExist");  
+        }
+        
+        Publish(payload);        
+    }
+    
+    public void RenewLodging(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";
+        
+        LodgingDB ldb = new LodgingDB();
+        Lodging l = new Lodging();
+        l.setLodgingId(c.ToString(datas[4]));      
+        Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(datas[5]));
+        java.sql.Date sqlStrDate = new java.sql.Date(strDate.getTime()); 
+        l.setExpireDate(sqlStrDate);
+
+        if (ldb.RenewLodging(l)) 
+            payload += c.ToHex("Success");
+        else 
+            payload += c.ToHex("Failed");
+        
+        Publish(payload);
+    }
+    
+    public void RemoveLodging(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];        
+        String lodgingID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";      
+        
+        LodgingDB ldb = new LodgingDB();             
+        if (ldb.RemoveLodging(lodgingID)) {     
+            payload += c.ToHex("Success");     
+        } else {
+            payload += c.ToHex("Failed");
+        }
+        Publish(payload);
+    }
+    
+    public void AddExpense(String message) throws Exception{
+        String[] datas = message.split("/");
+        String command = datas[0];
+        String reserve = datas[1];
+        String senderClientId = datas[3];
+        String receiverClientId = datas[2];        
+        String rentalID = c.ToString(datas[4]);
+        String payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/";      
+        
+        ExpenseDB edb = new ExpenseDB();
+        Expense e = new Expense();
+        e.setExpenseID(edb.NewExpenseID());
+        e.setCategory(c.ToString(datas[5]));
+        e.setAmount(Double.parseDouble(c.ToString(datas[6])));
+
+        Date payDate = new SimpleDateFormat("yyyy-MM-dd").parse(c.ToString(datas[7]));
+        java.sql.Date sqlPayDate = new java.sql.Date(payDate.getTime());
+        e.setPayDate(sqlPayDate);
+
+        e.setDescription(c.ToString(datas[8]));
+        e.setStatus("Active");
+        e.setRentalID(rentalID);
+       
+        if (edb.AddNewExpense(e)) {     
+            double sumExpense = edb.GetTotalExpense(e.getRentalID());
+            RentalDB rdb = new RentalDB();
+            TenantDB tdb = new TenantDB();
+            ReceiptDB rcdb = new ReceiptDB();
+            Rental r = rdb.GetRental(e.getRentalID());           
+            ArrayList<Tenant> tenantList = tdb.GetActiveTenant(r.getLeaseID());
+            r.setTotalAmount(rcdb.UpdateAmount(tenantList, sumExpense, r));
+            
+            if(rdb.UpdateRental(r)){
+                payload += c.ToHex("Success");
+            }             
+        } else {
+            payload += c.ToHex("Failed");
+        }
+        
+        Publish(payload);
+    }
+
     /**
      * ***********
      */

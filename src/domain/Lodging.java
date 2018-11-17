@@ -1,6 +1,6 @@
 package domain;
 
-import java.util.Date;
+import java.sql.Date;
 
 public class Lodging {
 
@@ -11,10 +11,11 @@ public class Lodging {
     private String facility;
     private String lodgingType;
     private String description;
-    private String expireDate;
+    private Date expireDate;
     private String userId;
     private String image;
     private int message;
+    private String status;
 
     public int getMessage() {
         return message;
@@ -99,11 +100,19 @@ public class Lodging {
         this.description = description;
     }
 
-    public String getExpireDate() {
+    public Date getExpireDate() {
         return expireDate;
     }
 
-    public void setExpireDate(String expireDate) {
+    public void setExpireDate(Date expireDate) {
         this.expireDate = expireDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

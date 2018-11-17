@@ -52,14 +52,14 @@ public class PrivateChatDB {
     }
     
     public List<Message> GetAllMessage(String senderID, String receiverID) throws Exception{
-        String sql = "SELECT * FROM privatechat WHERE ( senderID = ? AND receiverID = ? ) or ( senderID = ? AND receiverID = ? ) or senderID = ? " ;
+        String sql = "SELECT * FROM privatechat WHERE ( senderID = ? AND receiverID = ? ) or ( senderID = ? AND receiverID = ? ) or senderID = ? or receiverID = ?" ;
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.setString(1, senderID);
         pstmt.setString(2, receiverID);
         pstmt.setString(3, receiverID);
         pstmt.setString(4, senderID);
         pstmt.setString(5, senderID);
-      
+        pstmt.setString(6, senderID);
         ResultSet rs = pstmt.executeQuery();
         List<Message> list = new ArrayList<>();
         while(rs.next()){

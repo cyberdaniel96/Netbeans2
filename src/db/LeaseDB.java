@@ -1,21 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package db;
 
 import domain.Lease;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
-/**
- *
- * @author Daniel
- */
+/** @author chang **/
+
 public class LeaseDB {
     PreparedStatement pstmt;
     Connection con;
@@ -36,12 +30,9 @@ public class LeaseDB {
         pstmt.setDate(3, l.getIssueDate());
         pstmt.setString(4, l.getStatus());
         pstmt.setString(5, l.getLodgingID());
+        
         int result = pstmt.executeUpdate();
-        if (result > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return (result > 0);
     }
     
     public String NewLeaseID() throws Exception {
@@ -66,19 +57,15 @@ public class LeaseDB {
     }
     
     public ArrayList<Lease> GetUserLease(String userID) throws Exception {
-        String sql = "select * from lease Ls inner join lodging Lg on Ls.LodgingID=Lg.lodgingId where Lg.userId = ?";
+        String sql = "select * from lease Ls inner join lodging Lg on Ls.LodgingID=Lg.lodgingId where Ls.Status='Active' AND Lg.userId = ?";
         pstmt = con.prepareStatement(sql);
         pstmt.setString(1, userID);
         ResultSet rs = pstmt.executeQuery();
         ArrayList<Lease> leaseList = new ArrayList<>();
         while (rs.next()) {
-            Lease l = new Lease();
-            l.setLeaseID(rs.getString("LeaseID"));
-            l.setDueDay(rs.getString("PaymentDueDay"));
-            l.setIssueDate(rs.getDate("IssueDate"));
-            l.setStatus(rs.getString("Status"));
-            l.setLodgingID(rs.getString("LodgingID"));
-
+            Lease l = new Lease(
+                rs.getString("LeaseID"),rs.getString("PaymentDueDay"),rs.getString("Status"),rs.getString("LodgingID"),rs.getDate("IssueDate")
+            );
             leaseList.add(l);
         }
         return leaseList;
@@ -90,7 +77,7 @@ public class LeaseDB {
         pstmt.setString(1, leaseID);
         ResultSet rs = pstmt.executeQuery();
         Lease l = new Lease();
-        while (rs.next()) {          
+        while (rs.next()) {
             l.setLeaseID(rs.getString("LeaseID"));
             l.setDueDay(rs.getString("PaymentDueDay"));
             l.setIssueDate(rs.getDate("IssueDate"));
@@ -98,5 +85,28 @@ public class LeaseDB {
             l.setLodgingID(rs.getString("LodgingID"));
         }
         return l;
+    } 
+    
+    public boolean UpdateLease(Lease l) throws Exception{
+        String sql = "Update lease set PaymentDueDay=?,Status=? where LeaseID=?";
+        pstmt = con.prepareStatement(sql);            
+        pstmt.setString(1, l.getDueDay());
+        pstmt.setString(2, l.getStatus());
+        pstmt.setString(3, l.getLeaseID());
+        
+        int result = pstmt.executeUpdate();
+        return (result > 0);
+    }
+    
+    public int GetLeaseCount(String lodgingID) throws Exception {
+        String sql = "select COUNT(*) as noOfLease from lease where Status='Active' AND LodgingID = ?";
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, lodgingID);
+        ResultSet rs = pstmt.executeQuery();
+        int noOfLease = 0;
+        while (rs.next()) {          
+            noOfLease = rs.getInt("noOfLease");
+        }
+        return noOfLease;
     } 
 }

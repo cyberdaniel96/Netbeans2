@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package db;
 
 import domain.Tenant;
@@ -14,10 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-/**
- *
- * @author Daniel
- */
+/** @author chang **/
 
 public class TenantDB {
     PreparedStatement pstmt;
@@ -69,6 +61,34 @@ public class TenantDB {
     }
     
     public ArrayList<Tenant> GetAllTenant(String leaseID) throws Exception {
+        String sql = "select * from tenant where Status Not In('Inactive') AND LeaseID = ?";
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, leaseID);
+        ResultSet rs = pstmt.executeQuery();
+        ArrayList<Tenant> tenantList = new ArrayList<>();
+        while (rs.next()) {
+            Tenant t = new Tenant();
+            t.setTenantID(rs.getString("TenantID"));
+            t.setRoomType(rs.getString("RoomType"));
+            t.setRole(rs.getString("Role"));
+            t.setLeaseStart(rs.getDate("LeaseStart"));
+            t.setLeaseEnd(rs.getDate("LeaseEnd"));
+            t.setRent(rs.getDouble("Rent"));
+            t.setDeposit(rs.getDouble("Deposit"));
+            t.setStatus(rs.getString("Status"));
+            if(rs.getString("Status").equals("Terminated")){
+                t.setBreakDate(rs.getDate("BreakDate"));
+                t.setReason(rs.getString("Reason"));
+            }
+            t.setUserID(rs.getString("UserID"));
+            t.setLeaseID(rs.getString("LeaseID"));
+
+            tenantList.add(t);
+        }
+        return tenantList;
+    }
+    
+    public ArrayList<Tenant> GetActiveTenant(String leaseID) throws Exception {
         String sql = "select * from tenant where Status='Active' AND LeaseID = ?";
         pstmt = con.prepareStatement(sql);
         pstmt.setString(1, leaseID);
@@ -84,7 +104,7 @@ public class TenantDB {
             t.setRent(rs.getDouble("Rent"));
             t.setDeposit(rs.getDouble("Deposit"));
             t.setStatus(rs.getString("Status"));
-            if(rs.getString("Status").equals("Terminate")){
+            if(rs.getString("Status").equals("Terminated")){
                 t.setBreakDate(rs.getDate("BreakDate"));
                 t.setReason(rs.getString("Reason"));
             }
@@ -125,8 +145,7 @@ public class TenantDB {
         }    
         
         int result = pstmt.executeUpdate();
-
-        return result > 0;
+        return (result > 0);
     }
     
     public Tenant GetSelectedTenant(String tenantID) throws Exception {
@@ -135,53 +154,31 @@ public class TenantDB {
         pstmt.setString(1, tenantID);
         ResultSet rs = pstmt.executeQuery();
         Tenant t = new Tenant();
-        while (rs.next()) {           
-            t.setTenantID(rs.getString("TenantID"));
-            t.setRoomType(rs.getString("RoomType"));
-            t.setRole(rs.getString("Role"));
-            t.setLeaseStart(rs.getDate("LeaseStart"));
-            t.setLeaseEnd(rs.getDate("LeaseEnd"));
-            t.setRent(rs.getDouble("Rent"));
-            t.setDeposit(rs.getDouble("Deposit"));
-            t.setStatus(rs.getString("Status"));
-            t.setBreakDate(rs.getDate("BreakDate"));
-            t.setReason(rs.getString("Reason"));
-            t.setUserID(rs.getString("UserID"));
-            t.setLeaseID(rs.getString("LeaseID"));
+        Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse("17-11-2018");
+        while (rs.next()) {  
+            t = new Tenant(
+                rs.getString("TenantID"),rs.getString("RoomType"),rs.getString("Role"),rs.getString("Status"),rs.getString("Reason"),
+                rs.getString("LeaseID"),rs.getString("UserID"),rs.getDouble("Rent"),rs.getDouble("Deposit"),rs.getDate("LeaseStart"),
+                rs.getDate("LeaseEnd"),new java.sql.Date(strDate.getTime())
+            );
         }
         
         return t;
-    }
+    } // never use
     
-    public ArrayList<Tenant> GetTenantViaUserID(String userID) throws Exception{
-        String sql = "select * from tenant where (Status != 'Terminated' or Status != 'Inactive') AND UserID = ?";
+    public int GetTenantCount(String leaseId) throws Exception {
+        String sql = "select COUNT(*) as noOfTenant from tenant where Status='Active' AND LeaseID=?";
         pstmt = con.prepareStatement(sql);
-        pstmt.setString(1, userID);
+        pstmt.setString(1, leaseId);
         ResultSet rs = pstmt.executeQuery();
-        ArrayList<Tenant> tenantList = new ArrayList<>();
+        int noOfTenant = 0;
         while (rs.next()) {
-            Tenant t = new Tenant();
-            t.setTenantID(rs.getString("TenantID"));
-            t.setRoomType(rs.getString("RoomType"));
-            t.setRole(rs.getString("Role"));
-            t.setLeaseStart(rs.getDate("LeaseStart"));
-            t.setLeaseEnd(rs.getDate("LeaseEnd"));
-            t.setRent(rs.getDouble("Rent"));
-            t.setDeposit(rs.getDouble("Deposit"));
-            t.setStatus(rs.getString("Status"));
-            
-            t.setBreakDate(rs.getDate("BreakDate"));
-            t.setReason(rs.getString("Reason"));
-            
-            t.setUserID(rs.getString("UserID"));
-            t.setLeaseID(rs.getString("LeaseID"));
-
-            tenantList.add(t);
+            noOfTenant = rs.getInt("noOfTenant");
         }
-        return tenantList;
+        return noOfTenant;
     }
-    
-     public Tenant GetSelectedTenantWithLeaseID(String tenantID,String leaseID) throws Exception {
+
+ public Tenant GetSelectedTenantWithLeaseID(String tenantID,String leaseID) throws Exception {
         String sql = "select * from tenant where UserID = ? AND LeaseID = ?";
         pstmt = con.prepareStatement(sql);
         pstmt.setString(1, tenantID);
@@ -216,16 +213,52 @@ public class TenantDB {
          String sql = "";
          
          if(t.getStatus().equals("Rejected")){
-             sql = "Update tenant set Status=?,Reason=? where UserID=? AND LeaseID = ?";
+             sql = "Update tenant set Status=?,Reason=? where TenantID = ?";
              pstmt = con.prepareStatement(sql);            
              pstmt.setString(1, t.getStatus());
              pstmt.setString(2, t.getReason());
-             pstmt.setString(3, t.getUserID());
-             pstmt.setString(4, t.getLeaseID());
+             pstmt.setString(3, t.getTenantID());
+          
+         }
+         
+         if(t.getStatus().equals("Active")){
+             sql = "Update tenant set Status=? where TenantID = ?";
+             pstmt = con.prepareStatement(sql);
+             pstmt.setString(1, t.getStatus());
+             pstmt.setString(2, t.getTenantID());
+            
          }
          
          int result = pstmt.executeUpdate();
 
          return result > 0;
      }
+     
+     public ArrayList<Tenant> GetTenantViaUserID(String userID) throws Exception{
+        String sql = "select * from tenant where (Status != 'Terminated' or Status != 'Inactive') AND UserID = ?";
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, userID);
+        ResultSet rs = pstmt.executeQuery();
+        ArrayList<Tenant> tenantList = new ArrayList<>();
+        while (rs.next()) {
+            Tenant t = new Tenant();
+            t.setTenantID(rs.getString("TenantID"));
+            t.setRoomType(rs.getString("RoomType"));
+            t.setRole(rs.getString("Role"));
+            t.setLeaseStart(rs.getDate("LeaseStart"));
+            t.setLeaseEnd(rs.getDate("LeaseEnd"));
+            t.setRent(rs.getDouble("Rent"));
+            t.setDeposit(rs.getDouble("Deposit"));
+            t.setStatus(rs.getString("Status"));
+            
+            t.setBreakDate(rs.getDate("BreakDate"));
+            t.setReason(rs.getString("Reason"));
+            
+            t.setUserID(rs.getString("UserID"));
+            t.setLeaseID(rs.getString("LeaseID"));
+
+            tenantList.add(t);
+        }
+        return tenantList;
+    }
 }
