@@ -1,11 +1,13 @@
 package db;
 
 import domain.Lease;
+import domain.Tenant;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 /** @author chang **/
@@ -109,4 +111,22 @@ public class LeaseDB {
         }
         return noOfLease;
     } 
+    
+    public ArrayList<Tenant> isLeaseExpiry() throws Exception{
+        String sql = "select * from tenant where Status='Active' AND datediff(DATE_ADD(CURDATE(), INTERVAL 1 MONTH),LeaseEnd)=0";
+        pstmt = con.prepareStatement(sql); 
+        ArrayList<Tenant> tenantList = new ArrayList<>();
+        ResultSet rs = pstmt.executeQuery();
+        while(rs.next()){
+            java.util.Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse("01-01-2018");
+            Tenant t = new Tenant(
+                rs.getString("TenantID"),rs.getString("RoomType"),rs.getString("Role"),rs.getString("Status"),rs.getString("Reason"),
+                rs.getString("LeaseID"),rs.getString("UserID"),rs.getDouble("Rent"),rs.getDouble("Deposit"),rs.getDate("LeaseStart"),
+                rs.getDate("LeaseEnd"),new java.sql.Date(strDate.getTime())
+            );
+            tenantList.add(t);
+        }
+        
+        return tenantList;
+    }
 }

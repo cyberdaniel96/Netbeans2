@@ -1,5 +1,6 @@
 package db;
 
+import domain.Receipt;
 import domain.Rental;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -96,5 +97,20 @@ public class RentalDB {
         
         int result = pstmt.executeUpdate();
         return (result > 0);
+    }
+    
+    public ArrayList<Receipt> isRentalExipy() throws Exception{
+        String sql = "select * from receipt Rc inner join rental R where Rc.RentalID=R.RentalID AND R.Status='Active' AND datediff(R.DueDate,curdate())<=4 AND Rc.PayStatus='UnPaid'";
+        pstmt = con.prepareStatement(sql); 
+        ArrayList<Receipt> receiptList = new ArrayList<>();
+        ResultSet rs = pstmt.executeQuery();
+        while(rs.next()){
+            Receipt rc = new Receipt(
+                    rs.getString("ReceiptID"),rs.getString("Image"),rs.getString("PayStatus"),rs.getString("ReceiveStatus"),
+                    "",rs.getString("Status"),rs.getString("TenantID"),rs.getString("RentalID"),rs.getDouble("Amount"),rs.getTimestamp("DateTime")
+            );
+            receiptList.add(rc);
+        }
+        return receiptList;
     }
 }
