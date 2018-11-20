@@ -38,7 +38,7 @@ public class MQTT {
     String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
-    String ip = "192.168.42.188";
+    String ip = "192.168.43.85";
 
     String serverData = c.convertToHex(new String[]{
         "004841",
@@ -224,6 +224,8 @@ public class MQTT {
                             GetTenant(mqttMessage.toString());
                         } else if (command.equals("004851")) {
                             UpdateTenantStatus(mqttMessage.toString());
+                        } else if(command.equals("004853")){
+                            GetRentalDetails(mqttMessage.toString());
                         }
 
                     } else {
@@ -258,6 +260,68 @@ public class MQTT {
             e.printStackTrace();
         }
     }
+    
+    private void GetRentalDetails(String message) throws Exception{
+        String data[] = message.split("\\$");
+        String server[] = c.convertToString(data[0]);
+        
+        String command = server[0];
+        String reserve = server[1];
+        String senderClientId = server[3];
+        String receiverClientID = server[2];
+        
+       String tail[] = c.convertToString(data[1]);
+       String id = tail[0];
+       String mycommand = tail[1];
+        
+        TenantDB tdb = new TenantDB();
+        LeaseDB ldb = new LeaseDB();
+        LodgingDB lodb = new LodgingDB();
+        RentalDB rdb = new RentalDB();
+       
+        if(mycommand.equals("LODGING")){
+            ArrayList<Tenant> tList = tdb.GetAllTenants(id);
+            System.err.println(tList.size());
+            ArrayList<Lodging> loList = new ArrayList<>();
+            ArrayList<Lease> lList = new ArrayList<>();
+            Rental rental = new Rental();
+            for(Tenant t: tList){
+                Lease lease = ldb.GetLease(t.getLeaseID());
+                rental = rdb.GetRentals(t.getLeaseID());
+                lList.add(lease);
+                
+            }
+            
+            for(Lease l: lList){
+                Lodging lodging = lodb.GetLodging(l.getLodgingID());
+                loList.add(lodging);
+            }
+
+            String payload = "";
+            payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, loList.size()+"",mycommand, ""});
+            for(Lodging l: loList){
+                payload += "$" + c.convertToHex(new String[]{l.getTitle(), l.getAddress(), l.getImage(), rental.getRentalID()});
+            }
+            Publish(payload);
+            return;
+        }
+        
+        if(mycommand.equals("RENTAL")){
+            Rental rental = rdb.GetRental(id);
+           
+            String payload = "";
+            payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, 0+"",mycommand, ""});
+            payload += "$" + c.convertToHex(new String[]{rental.getRentalID(),
+            rental.getIssueDate().toString(),
+            rental.getDueDate().toString(),
+            rental.getTotalAmount()+"",
+            rental.getStatus(),
+            rental.getLeaseID()});
+            Publish(payload);
+        }
+        
+        //group
+    }
 
     public void CreateVerificationCode(String message) throws Exception {
         String[] splitDollar = message.split("\\$");
@@ -286,11 +350,12 @@ public class MQTT {
         String notificationData = c.convertToHex(new String[]{"Lodging Service System",
             "Your verification code is " + randomCode,
             "VERIFICATION RECEIVED",
-            body[3]});
+            body[4]});
 
         String resourcesData = c.ToHex("Hello") + "@" + c.ToHex("world");
 
         String sendNotification = serverData + "$" + notificationData + "$" + resourcesData;
+        
         CreateNotification(sendNotification);
 
     }
@@ -526,13 +591,15 @@ public class MQTT {
             Publish(serverData + "$" + notifyData + "$" + splitDollar[2]);
             return;
         }
-
+        
         if (notiData[2].equals("VERIFICATION RECEIVED")) { //owner/tenant receive
             String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1], notiData[2], notiData[3]});
+            System.err.println(notiData[3]);
             Publish(serverData + "$" + notifyData + "$" + splitDollar[2]);
             return;
         }    
-        System.err.println(notiData[2]);
+        
+       
         if(notiData[2].equals("RENTAL EDITED")){ //send to owner
             RentalDB rdb = new RentalDB();
             Rental r = rdb.GetRental(notiData[3]);
@@ -546,7 +613,7 @@ public class MQTT {
           
             if(tenantList.size()>0){
                 for(int i = 0; i < tenantList.size(); i++){
-                    String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1]+lo.getTitle(), notiData[2], tenantList.get(i).getUserID()}); System.err.println(tenantList.get(i).getUserID());
+                    String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1]+lo.getTitle(), notiData[2], tenantList.get(i).getUserID()});
                     Publish(serverData + "$" + notifyData + "$" + splitDollar[2]); 
                 }     
             }     
@@ -603,8 +670,7 @@ public class MQTT {
         senderClientID = datas[3];
         receiverClientID = datas[2];
         PrivateChatDB db = new PrivateChatDB();
-        System.err.println(senderId);
-        System.err.println(receiverId);
+        
         List<Message> list = db.GetAllMessage(senderId, receiverId);
         String tempValue = "";
         for (Message tempM : list) {
@@ -1825,7 +1891,7 @@ public class MQTT {
             }
 
             payload += c.ToHex("0");
-            System.err.println(leaseID);
+            
             String notifyData = c.convertToHex(new String[]{"Lodging Service System", "New rental was uploaded.", "RENTAL UPLOADED", "LS00000"});
             String resource = c.ToHex("leaseID") + "@" + c.ToHex("tenantID");
             CreateNotification(serverData + "$" + notifyData + "$" + resource);

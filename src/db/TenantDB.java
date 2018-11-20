@@ -261,4 +261,24 @@ public class TenantDB {
         }
         return tenantList;
     }
+     
+     public ArrayList<Tenant> GetAllTenants(String userID) throws Exception{
+        String sql = "select * from tenant where UserID = ?";
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, userID);
+        ResultSet rs = pstmt.executeQuery();
+        Tenant t = new Tenant();
+        ArrayList<Tenant> tlist = new ArrayList<>();
+        Date strDate = new SimpleDateFormat("yyyy-MM-dd").parse("17-11-2018");
+        while (rs.next()) {  
+            t = new Tenant(
+                rs.getString("TenantID"),rs.getString("RoomType"),rs.getString("Role"),rs.getString("Status"),rs.getString("Reason"),
+                rs.getString("LeaseID"),rs.getString("UserID"),rs.getDouble("Rent"),rs.getDouble("Deposit"),rs.getDate("LeaseStart"),
+                rs.getDate("LeaseEnd"),new java.sql.Date(strDate.getTime())
+            );
+            tlist.add(t);
+        }
+        
+        return tlist;
+     }
 }

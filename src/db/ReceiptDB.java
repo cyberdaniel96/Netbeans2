@@ -69,7 +69,7 @@ public class ReceiptDB {
         while (rs.next()) {
             Receipt r = new Receipt(
                     rs.getString("ReceiptID"),rs.getString("Image"),rs.getString("PayStatus"),rs.getString("ReceiveStatus"),rs.getString("Reason"),
-                    rs.getString("Status"),rs.getString("TenatID"),rs.getString("RentalID"),rs.getDouble("Amount"), new Timestamp(Calendar.getInstance().getTime().getTime())
+                    rs.getString("Status"),rs.getString("TenantID"),rs.getString("RentalID"),rs.getDouble("Amount"), new Timestamp(Calendar.getInstance().getTime().getTime())
             );
             receiptList.add(r);
         }
@@ -122,7 +122,7 @@ public class ReceiptDB {
             if(rs.getString("PayStatus").equals("Paid")){
                 r = new Receipt(
                     rs.getString("ReceiptID"),rs.getString("Image"),rs.getString("PayStatus"),rs.getString("ReceiveStatus"),rs.getString("Reason"),
-                    rs.getString("Status"),rs.getString("TenatID"),rs.getString("RentalID"),rs.getDouble("Amount"),rs.getTimestamp("DateTime")
+                    rs.getString("Status"),rs.getString("TenantID"),rs.getString("RentalID"),rs.getDouble("Amount"),rs.getTimestamp("DateTime")
                 );
             }else{
                 r = new Receipt(
@@ -149,10 +149,14 @@ public class ReceiptDB {
             r.setReceiveStatus(rs.getString("ReceiveStatus"));
             r.setReason(rs.getString("Reason"));
             r.setStatus(rs.getString("Status"));
-            r.setTenantID(rs.getString("TenatID"));
+            r.setTenantID(rs.getString("TenantID"));
             r.setRentalID(rs.getString("RentalID"));
         }
         
         return r;
     } //never use
+    
+    
+    
+    
 }
