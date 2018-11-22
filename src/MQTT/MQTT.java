@@ -284,11 +284,14 @@ public class MQTT {
             System.err.println(tList.size());
             ArrayList<Lodging> loList = new ArrayList<>();
             ArrayList<Lease> lList = new ArrayList<>();
-            Rental rental = new Rental();
+            ArrayList<String> strLeaseID = new ArrayList<>();
+            
+            
+            
             for(Tenant t: tList){
                 Lease lease = ldb.GetLease(t.getLeaseID());
-                rental = rdb.GetRentals(t.getLeaseID());
                 lList.add(lease);
+                strLeaseID.add(t.getLeaseID());
                 
             }
             
@@ -299,28 +302,28 @@ public class MQTT {
 
             String payload = "";
             payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, loList.size()+"",mycommand, ""});
+            int count = 0;
             for(Lodging l: loList){
-                payload += "$" + c.convertToHex(new String[]{l.getTitle(), l.getAddress(), l.getImage(), rental.getRentalID()});
+                payload += "$" + c.convertToHex(new String[]{l.getTitle(), l.getAddress(), l.getImage(), strLeaseID.get(count++)});
             }
             Publish(payload);
             return;
         }
         
         if(mycommand.equals("RENTAL")){
-            Rental rental = rdb.GetRental(id);
-           
+            ArrayList<Rental> rList = rdb.GetRentals(id);
             String payload = "";
-            payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, 0+"",mycommand, ""});
-            payload += "$" + c.convertToHex(new String[]{rental.getRentalID(),
-            rental.getIssueDate().toString(),
-            rental.getDueDate().toString(),
-            rental.getTotalAmount()+"",
-            rental.getStatus(),
-            rental.getLeaseID()});
+            payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, rList.size()+"",mycommand, ""});
+            for(Rental rental: rList){
+                payload += "$" + c.convertToHex(new String[]{rental.getRentalID(),
+                    rental.getIssueDate().toString(),
+                    rental.getDueDate().toString(),
+                    rental.getTotalAmount() + "",
+                    rental.getStatus(),
+                    rental.getLeaseID()});
+            }
             Publish(payload);
         }
-        
-        //group
     }
 
     public void CreateVerificationCode(String message) throws Exception {

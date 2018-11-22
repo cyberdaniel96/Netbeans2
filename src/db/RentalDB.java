@@ -114,17 +114,19 @@ public class RentalDB {
         return receiptList;
     }
     
-     public Rental GetRentals(String leaseID) throws Exception {
+     public ArrayList GetRentals(String leaseID) throws Exception {
         String sql = "select * from rental where LeaseID=?";
         pstmt = con.prepareStatement(sql);
         pstmt.setString(1, leaseID);
         ResultSet rs = pstmt.executeQuery();
         Rental r = null;
+        ArrayList<Rental> list = new ArrayList<>();
         while (rs.next()) {         
             r = new Rental(
                 rs.getString("RentalID"),rs.getString("Status"),rs.getString("LeaseID"),rs.getDate("IssueDate"),rs.getDate("DueDate"),Double.parseDouble(rs.getString("TotalAmount"))
-            );                     
+            );
+            list.add(r);
         }
-        return r;
+        return list;
     }
 }
