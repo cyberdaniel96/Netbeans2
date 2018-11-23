@@ -278,10 +278,11 @@ public class MQTT {
         LeaseDB ldb = new LeaseDB();
         LodgingDB lodb = new LodgingDB();
         RentalDB rdb = new RentalDB();
-       
+        ReceiptDB redb = new ReceiptDB();
+        ExpenseDB edb = new ExpenseDB();
+        
         if(mycommand.equals("LODGING")){
             ArrayList<Tenant> tList = tdb.GetAllTenants(id);
-            System.err.println(tList.size());
             ArrayList<Lodging> loList = new ArrayList<>();
             ArrayList<Lease> lList = new ArrayList<>();
             ArrayList<String> strLeaseID = new ArrayList<>();
@@ -314,6 +315,7 @@ public class MQTT {
             ArrayList<Rental> rList = rdb.GetRentals(id);
             String payload = "";
             payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, rList.size()+"",mycommand, ""});
+            
             for(Rental rental: rList){
                 payload += "$" + c.convertToHex(new String[]{rental.getRentalID(),
                     rental.getIssueDate().toString(),
@@ -323,6 +325,32 @@ public class MQTT {
                     rental.getLeaseID()});
             }
             Publish(payload);
+        }
+        
+        if(mycommand.equals("RECEIPT")){
+            String myID[] = id.split("\\|");
+            String leaseID = myID[0];
+            String rentalID = myID[1];
+          
+            Tenant t = tdb.GetOneTenant(leaseID);
+            Receipt r = redb.GetReceipt(t.getTenantID(), rentalID);
+            
+            String payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, 0+"",mycommand, ""});
+            payload += "$"+c.convertToHex(new String[]{r.getReceiptID(),r.getAmount()+"",r.getImage(),r.getPayStatus(),r.getDateTime().toString()});
+            Publish(payload);
+        }
+        
+        if(mycommand.equals("EXPENDSES")){
+            ArrayList<Expense> exlist = edb.GetAllExpenses(id);
+            System.err.println(id);
+            int size = exlist.size();
+             String payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, size+"",mycommand, ""});
+            
+             for(Expense e: exlist){
+                 payload += "$"+c.convertToHex(new String[]{e.getCategory(),e.getAmount()+""});
+             }
+             
+             Publish(payload);
         }
     }
 
@@ -597,7 +625,6 @@ public class MQTT {
         
         if (notiData[2].equals("VERIFICATION RECEIVED")) { //owner/tenant receive
             String notifyData = c.convertToHex(new String[]{notiData[0], notiData[1], notiData[2], notiData[3]});
-            System.err.println(notiData[3]);
             Publish(serverData + "$" + notifyData + "$" + splitDollar[2]);
             return;
         }    
@@ -2321,5 +2348,10 @@ public class MQTT {
         String notifyData = c.convertToHex(new String[] {"Lodging Service System", "Rental was edited.", "RENTAL EDITED", rentalID});
         String resource = c.ToHex("leaseID") +"@"+c.ToHex("tenantID");
         CreateNotification(serverData + "$" + notifyData + "$" + resource);
+    }
+    
+    public static void main(String[] args) {
+        String some = "LS00000@RT00000";
+        System.out.println(some.split("\\@")[0]);
     }
 }

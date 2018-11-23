@@ -281,4 +281,31 @@ public class TenantDB {
         
         return tlist;
      }
+     
+      public Tenant GetOneTenant(String leaseID) throws Exception {
+        String sql = "select * from tenant where leaseID = ?";
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, leaseID);
+        ResultSet rs = pstmt.executeQuery();
+        Tenant t = new Tenant();
+        while (rs.next()) {
+            t.setTenantID(rs.getString("TenantID"));
+            t.setRoomType(rs.getString("RoomType"));
+            t.setRole(rs.getString("Role"));
+            t.setLeaseStart(rs.getDate("LeaseStart"));
+            t.setLeaseEnd(rs.getDate("LeaseEnd"));
+            t.setRent(rs.getDouble("Rent"));
+            t.setDeposit(rs.getDouble("Deposit"));
+            t.setStatus(rs.getString("Status"));
+            if(rs.getString("Status").equals("Terminated")){
+                t.setBreakDate(rs.getDate("BreakDate"));
+                t.setReason(rs.getString("Reason"));
+            }
+            t.setUserID(rs.getString("UserID"));
+            t.setLeaseID(rs.getString("LeaseID"));
+
+          
+        }
+        return t;
+    }
 }
