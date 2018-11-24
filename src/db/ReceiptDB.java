@@ -156,7 +156,19 @@ public class ReceiptDB {
         return r;
     } //never use
     
-    
+    public boolean UpdateTenantReceipt(Receipt r) throws Exception{
+        String sql = "";
+
+        sql = "Update receipt set Image = ?, PayStatus = ? where ReceiptID = ?";
+        pstmt = con.prepareStatement(sql);
+        pstmt.setString(1, r.getImage());
+        pstmt.setString(2, r.getPayStatus());
+        pstmt.setString(3, r.getReceiptID());
+        int result = pstmt.executeUpdate();
+
+        return result > 0;
+    }
+
     
     
 }

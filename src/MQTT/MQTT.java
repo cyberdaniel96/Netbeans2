@@ -226,7 +226,11 @@ public class MQTT {
                             UpdateTenantStatus(mqttMessage.toString());
                         } else if(command.equals("004853")){
                             GetRentalDetails(mqttMessage.toString());
+                        }else if(command.equals("004855")){
+                            UpdateTenantReceipt(mqttMessage.toString());
                         }
+                        
+                        
 
                     } else {
                         System.out.println("Not belong to server");
@@ -259,6 +263,48 @@ public class MQTT {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    private void UpdateTenantReceipt(String message) throws Exception{
+        String data[] = message.split("\\$");
+        String server[] = c.convertToString(data[0]);
+        
+        String command = server[0];
+        String reserve = server[1];
+        String senderClientId = server[3];
+        String receiverClientID = server[2];
+        
+        String[] body = data[1].split("AND");
+
+        String receiptID = body[1];
+        String paidStatus = "PAID";
+        
+        Receipt receipt = new Receipt();
+        receipt.setPayStatus(paidStatus);
+        receipt.setImage("http://"+ip+"/img/Receipt/"+receiptID+"_receipt.jpg");
+        receipt.setReceiptID(receiptID);
+       
+        ReceiptDB db = new ReceiptDB();
+        if(db.UpdateTenantReceipt(receipt)){
+             System.err.println("HERE " + receiptID);
+            //Start:: Convert String back to Image
+            String strImg = body[0];
+            byte[] decoded = Base64.getDecoder().decode(strImg);
+            BufferedImage img = ImageIO.read(new ByteArrayInputStream(decoded));
+            File path = new File("C:\\xampp\\htdocs\\img\\Receipt\\" +receiptID+"_receipt.jpg");
+            ImageIO.write(img, "jpg", path);
+            //End:; Convert String back to Image
+            
+            String payload = c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, "Success"});
+            Publish(payload);
+        }else{
+             System.err.println("HERE " + receiptID);
+              String payload = c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, "Failed"});
+              Publish(payload);
+        }
+        
+     
+            
     }
     
     private void GetRentalDetails(String message) throws Exception{
@@ -342,7 +388,6 @@ public class MQTT {
         
         if(mycommand.equals("EXPENDSES")){
             ArrayList<Expense> exlist = edb.GetAllExpenses(id);
-            System.err.println(id);
             int size = exlist.size();
              String payload = c.convertToHex(new String[]{command,reserve, senderClientId, receiverClientID, size+"",mycommand, ""});
             
