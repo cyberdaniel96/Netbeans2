@@ -274,11 +274,11 @@ public class MQTT {
         String senderClientId = server[3];
         String receiverClientID = server[2];
         
-        String[] body = data[1].split("AND");
-
+        String[] body = data[1].split("\\@");
+        
         String receiptID = body[1];
         String paidStatus = "PAID";
-        
+        System.err.println(receiptID);
         Receipt receipt = new Receipt();
         receipt.setPayStatus(paidStatus);
         receipt.setImage("http://"+ip+"/img/Receipt/"+receiptID+"_receipt.jpg");
