@@ -28,9 +28,9 @@ public class PrivateChatDB {
     
     public PrivateChatDB() throws Exception {
         Class.forName("com.mysql.jdbc.Driver");
-        String url = "jdbc:mysql://localhost:3306/lodging";
+        String url = "jdbc:mysql://localhost/lodging";
         String username = "root";
-        String password = "";
+        String password = "abcd1234";
         con = DriverManager.getConnection(url, username, password);
     }
     

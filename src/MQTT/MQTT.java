@@ -25,7 +25,7 @@ public class MQTT {
     String clientId = "serverLSSserver";
     MemoryPersistence persistence;
     Converter c = new Converter();
-    String ip = "192.168.0.182";
+    String ip = "172.18.23.5";
 
     String serverData = c.convertToHex(new String[]{
         "004841",
@@ -425,16 +425,21 @@ public class MQTT {
     }
 
     public void GetAllLodging(String message) throws Exception {
+       
         String[] datas = message.split("/");
+        
         String command = datas[0];
         String reserve = datas[1];
         String senderClientId = datas[3];
         String receiverClientId = datas[2];
         String payload = "";
+        
         LodgingDB ldb = new LodgingDB();
+        
         ArrayList<Lodging> la = ldb.GetAllLodging();
+        
         ldb.IsExpiryCheck();
-
+        
         if (!la.isEmpty()) {
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex(la.size() + "");
             for (int i = 0; i < la.size(); i++) {
@@ -446,6 +451,7 @@ public class MQTT {
             }
             Publish(payload);
         } else {
+            
             payload = command + "/" + reserve + "/" + senderClientId + "/" + receiverClientId + "/" + c.ToHex("0");
             Publish(payload);
         }
@@ -1365,7 +1371,10 @@ public class MQTT {
             }
             System.out.println(data);
             Publish(serverdata + "$" + data.substring(0, data.length() - 1));
+            return;
         }
+        
+ 
     }
 
     public void GetTenant(String message) throws Exception {
@@ -1570,13 +1579,13 @@ public class MQTT {
         ReceiptDB db = new ReceiptDB();
         if(db.UpdateTenantReceipt(receipt)){
              System.err.println("HERE " + receiptID);
-            /*Start:: Convert String back to Image
+            //Start:: Convert String back to Image
             String strImg = body[0];
             byte[] decoded = Base64.getDecoder().decode(strImg);
             BufferedImage img = ImageIO.read(new ByteArrayInputStream(decoded));
             File path = new File("C:\\xampp\\htdocs\\img\\Receipt\\" +receiptID+"_receipt.jpg");
             ImageIO.write(img, "jpg", path);
-            End:; Convert String back to Image*/
+            //End:; Convert String back to Image*/
             
             String payload = c.convertToHex(new String[]{command, reserve, senderClientId, receiverClientID, "Success"});
             Publish(payload);
