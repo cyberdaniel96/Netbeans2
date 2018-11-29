@@ -21,7 +21,7 @@ public class FavouriteDB {
     }
 
     public ArrayList<Favourite> GetUserFavourite(String userId) throws Exception {
-        String sql = "select * from favourite where userId = ?";
+        String sql = "select * from favourite F inner join lodging L on F.lodgingId=L.lodgingId where L.status Not In('Inactive') AND F.userId = ?";
         pstmt = con.prepareStatement(sql);
         pstmt.setString(1, userId);
         ResultSet rs = pstmt.executeQuery();

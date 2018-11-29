@@ -79,7 +79,8 @@ public class TenantDB {
             if(rs.getString("Status").equals("Terminated")){
                 t.setBreakDate(rs.getDate("BreakDate"));
                 t.setReason(rs.getString("Reason"));
-            }
+            }else if(rs.getString("Status").equals("Rejected"))
+                t.setReason(rs.getString("Reason"));
             t.setUserID(rs.getString("UserID"));
             t.setLeaseID(rs.getString("LeaseID"));
 
