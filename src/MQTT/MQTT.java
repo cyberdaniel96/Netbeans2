@@ -1573,6 +1573,7 @@ public class MQTT {
         System.err.println(receiptID);
         Receipt receipt = new Receipt();
         receipt.setPayStatus(paidStatus);
+        receipt.setStatus(paidStatus);
         receipt.setImage("http://"+ip+"/img/Receipt/"+receiptID+"_receipt.jpg");
         receipt.setReceiptID(receiptID);
        
