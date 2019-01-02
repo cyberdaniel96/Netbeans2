@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 
 /** @author chang **/
-
+//
 public class LodgingDB {
 
     PreparedStatement pstmt;
